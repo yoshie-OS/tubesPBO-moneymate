@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoneyMate - Personal Finance Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- User Setup Modal -->
+    <div id="userSetupModal" class="modal">
+        <div class="modal-content">
+            <h2>👤 Setup User</h2>
+            <p>Selamat datang di MoneyMate! Silakan setup akun Anda.</p>
+            <form id="userSetupForm">
+                <div class="form-group">
+                    <label for="setupUsername">Username:</label>
+                    <input type="text" id="setupUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="setupEmail">Email:</label>
+                    <input type="email" id="setupEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="setupInitialBalance">Saldo Awal (Rp):</label>
+                    <input type="number" id="setupInitialBalance" name="initialBalance" step="0.01" value="0" required>
+                </div>
+                <button type="submit" class="btn btn-primary">🚀 Mulai Menggunakan MoneyMate</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="container" id="mainApp" style="display: none;">
+        <header>
+            <h1>💰 MoneyMate</h1>
+            <p id="userWelcome">Personal Finance Manager</p>
+        </header>
+
+        <!-- Balance Summary -->
+        <div class="balance-card">
+            <div class="balance-item balance-total">
+                <h3>Saldo Total</h3>
+                <p id="totalBalance">Rp 0</p>
+            </div>
+            <div class="balance-item balance-income">
+                <h3>Pemasukan</h3>
+                <p id="totalIncome">Rp 0</p>
+            </div>
+            <div class="balance-item balance-expense">
+                <h3>Pengeluaran</h3>
+                <p id="totalExpense">Rp 0</p>
+            </div>
+        </div>
+
+        <!-- Add Transaction Form -->
+        <div class="card">
+            <h2>➕ Tambah Transaksi</h2>
+            <form id="addTransactionForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="transactionType">Tipe:</label>
+                        <select id="transactionType" name="type" required>
+                            <option value="income">Pemasukan</option>
+                            <option value="expense">Pengeluaran</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="amount">Jumlah (Rp):</label>
+                        <input type="number" id="amount" name="amount" step="0.01" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="description">Deskripsi:</label>
+                        <input type="text" id="description" name="description" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date">Tanggal:</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="category">Kategori:</label>
+                        <input type="text" id="category" name="category" placeholder="Contoh: Makanan, Gaji, Transport" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label id="extraLabel">Sumber:</label>
+                        <input type="text" id="extra" name="extra" required>
+                    </div>
+                </div>
+
+                <div id="recurringDiv" class="form-group" style="display: none;">
+                    <label>
+                        <input type="checkbox" id="recurring" name="recurring">
+                        Pengeluaran Berulang
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary">💾 Simpan Transaksi</button>
+            </form>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="card">
+            <div class="card-header">
+                <h2>📊 Daftar Transaksi</h2>
+                <div>
+                    <button id="refreshBtn" class="btn btn-secondary">🔄 Refresh</button>
+                    <button id="reportBtn" class="btn btn-secondary">📈 Laporan Bulanan</button>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="transactionTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipe</th>
+                            <th>Tanggal</th>
+                            <th>Kategori</th>
+                            <th>Deskripsi</th>
+                            <th>Jumlah</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionTableBody">
+                        <tr>
+                            <td colspan="7" style="text-align: center;">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2025 MoneyMate | Built with TypeScript + Spring Boot</p>
+        </footer>
+    </div>
+
+    <script type="module" src="dist/app.js"></script>
+</body>
+</html>
