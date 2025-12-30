@@ -4,17 +4,47 @@
 
 ---
 
-## 📦 Cara Install & Menjalankan
+## 📦 Prerequisites (Install Dulu!)
+
+### **Windows:**
+Install dependencies berikut:
+1. **Java 17+** - [Download JDK](https://www.oracle.com/java/technologies/downloads/)
+2. **Maven** - [Download Maven](https://maven.apache.org/download.cgi)
+3. **Node.js + npm** - [Download Node.js](https://nodejs.org/)
+
+Verify installation:
+```bash
+java -version    # Should show version 17+
+mvn -version     # Should show Maven version
+node -version    # Should show Node version
+```
+
+### **Linux (Fedora/RHEL):**
+```bash
+sudo dnf install java-17-openjdk-devel maven nodejs npm
+```
+
+### **Linux (Ubuntu/Debian):**
+```bash
+sudo apt install openjdk-17-jdk maven nodejs npm
+```
+
+---
+
+## 🚀 Cara Menjalankan
 
 ### **Windows:**
 1. Double-click `START.bat`
-2. Buka browser: http://localhost:3000
+2. Wait for build to complete
+3. Buka browser: http://localhost:3000
 
 ### **Linux/Mac:**
-1. Jalankan: `./START.sh`
-2. Buka browser: http://localhost:3000
+```bash
+./START.sh
+```
+4. Buka browser: http://localhost:3000
 
-> **Catatan:** Pastikan Java 17+ dan Maven sudah terinstall.
+> **First run will take 1-2 minutes** (downloading dependencies)
 
 ---
 
