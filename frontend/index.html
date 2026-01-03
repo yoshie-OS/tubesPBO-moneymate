@@ -5,143 +5,436 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoneyMate - Personal Finance Manager</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- User Setup Modal -->
-    <div id="userSetupModal" class="modal">
-        <div class="modal-content">
-            <h2>👤 Setup User</h2>
-            <p>Selamat datang di MoneyMate! Silakan setup akun Anda.</p>
-            <form id="userSetupForm">
+    <!-- Login/Registration Modal -->
+    <div id="authModal" class="modal">
+        <div class="modal-content auth-modal">
+            <div class="auth-tabs">
+                <button class="tab-btn active" data-tab="login">🔐 Login</button>
+                <button class="tab-btn" data-tab="register">📝 Register</button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm" class="auth-form active">
+                <h2>Welcome Back!</h2>
+                <p class="auth-subtitle">Sign in to manage your finances</p>
+                <form id="loginFormElement">
+                    <div class="form-group">
+                        <label for="loginUsername">Username</label>
+                        <input type="text" id="loginUsername" name="username" placeholder="Enter your username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <span>Login</span>
+                        <span class="btn-loader" style="display: none;">⏳</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Registration Form -->
+            <div id="registerForm" class="auth-form">
+                <h2>Create Account</h2>
+                <p class="auth-subtitle">Start managing your finances today</p>
+                <form id="registerFormElement">
+                    <div class="form-group">
+                        <label for="registerUsername">Username</label>
+                        <input type="text" id="registerUsername" name="username" placeholder="Choose a username" required>
+                    </div>
                 <div class="form-group">
-                    <label for="setupUsername">Username:</label>
-                    <input type="text" id="setupUsername" name="username" required>
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" name="email" placeholder="your.email@example.com" required>
                 </div>
                 <div class="form-group">
-                    <label for="setupEmail">Email:</label>
-                    <input type="email" id="setupEmail" name="email" required>
+                        <label for="registerPassword">Password</label>
+                        <input type="password" id="registerPassword" name="password" placeholder="Create a password" required>
                 </div>
                 <div class="form-group">
-                    <label for="setupInitialBalance">Saldo Awal (Rp):</label>
-                    <input type="number" id="setupInitialBalance" name="initialBalance" step="0.01" value="0" required>
+                        <label for="registerBalance">Initial Balance (Rp)</label>
+                        <input type="number" id="registerBalance" name="initialBalance" step="0.01" value="0" placeholder="0" required>
                 </div>
-                <button type="submit" class="btn btn-primary">🚀 Mulai Menggunakan MoneyMate</button>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <span>Create Account</span>
+                        <span class="btn-loader" style="display: none;">⏳</span>
+                    </button>
             </form>
+            </div>
         </div>
     </div>
 
-    <div class="container" id="mainApp" style="display: none;">
-        <header>
-            <h1>💰 MoneyMate</h1>
-            <p id="userWelcome">Personal Finance Manager</p>
-        </header>
+    <!-- Main Application -->
+    <div class="app-container" id="mainApp" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">💰</span>
+                    <span class="logo-text">MoneyMate</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="transactions">
+                    <span class="nav-icon">💳</span>
+                    <span class="nav-text">Transactions</span>
+                </a>
 
-        <!-- Balance Summary -->
-        <div class="balance-card">
-            <div class="balance-item balance-total">
-                <h3>Saldo Total</h3>
-                <p id="totalBalance">Rp 0</p>
+                <a href="#" class="nav-item" data-page="reports">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Reports</span>
+                </a>
+
+                <a href="#" class="nav-item" data-page="profile">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">Profile</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn btn-danger btn-block">
+                    🚪 Logout
+                </button>
             </div>
-            <div class="balance-item balance-income">
-                <h3>Pemasukan</h3>
-                <p id="totalIncome">Rp 0</p>
-            </div>
-            <div class="balance-item balance-expense">
-                <h3>Pengeluaran</h3>
-                <p id="totalExpense">Rp 0</p>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="pageTitle">Dashboard</h1>
+                    <p id="userWelcome" class="header-subtitle">Welcome back!</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span id="userDisplayName">User</span>
+                        <span class="user-badge">👤</span>
             </div>
         </div>
+            </header>
 
-        <!-- Add Transaction Form -->
-        <div class="card">
-            <h2>➕ Tambah Transaksi</h2>
-            <form id="addTransactionForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="transactionType">Tipe:</label>
-                        <select id="transactionType" name="type" required>
-                            <option value="income">Pemasukan</option>
-                            <option value="expense">Pengeluaran</option>
-                        </select>
+            <!-- Dashboard Page -->
+            <div id="dashboardPage" class="page active">
+                <!-- Balance Cards -->
+                <div class="balance-grid">
+                    <div class="balance-card balance-total">
+                        <div class="balance-icon">💵</div>
+                        <div class="balance-content">
+                            <h3>Total Balance</h3>
+                            <p id="totalBalance" class="balance-amount">Rp 0</p>
+                            <span class="balance-label">Current Balance</span>
+                        </div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="amount">Jumlah (Rp):</label>
-                        <input type="number" id="amount" name="amount" step="0.01" required>
+                    <div class="balance-card balance-income">
+                        <div class="balance-icon">📈</div>
+                        <div class="balance-content">
+                            <h3>Total Income</h3>
+                            <p id="totalIncome" class="balance-amount">Rp 0</p>
+                            <span class="balance-label">This Period</span>
+                        </div>
                     </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="description">Deskripsi:</label>
-                        <input type="text" id="description" name="description" required>
+                    <div class="balance-card balance-expense">
+                        <div class="balance-icon">📉</div>
+                        <div class="balance-content">
+                            <h3>Total Expense</h3>
+                            <p id="totalExpense" class="balance-amount">Rp 0</p>
+                            <span class="balance-label">This Period</span>
+                        </div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="date">Tanggal:</label>
-                        <input type="date" id="date" name="date" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="category">Kategori:</label>
-                        <input type="text" id="category" name="category" placeholder="Contoh: Makanan, Gaji, Transport" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label id="extraLabel">Sumber:</label>
-                        <input type="text" id="extra" name="extra" required>
+                    <div class="balance-card balance-summary">
+                        <div class="balance-icon">📊</div>
+                        <div class="balance-content">
+                            <h3>Transactions</h3>
+                            <p id="totalTransactions" class="balance-amount">0</p>
+                            <span class="balance-label">Total Count</span>
+                        </div>
                     </div>
                 </div>
 
-                <div id="recurringDiv" class="form-group" style="display: none;">
-                    <label>
-                        <input type="checkbox" id="recurring" name="recurring">
-                        Pengeluaran Berulang
-                    </label>
+                <!-- Quick Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>Recent Transactions</h4>
+                        <div id="recentTransactions" class="recent-list">
+                            <p class="empty-state">No recent transactions</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Category Breakdown</h4>
+                        <div id="categoryBreakdown" class="category-list">
+                            <p class="empty-state">No data available</p>
+                        </div>
+                    </div>
+                    </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary">💾 Simpan Transaksi</button>
+            <!-- Transactions Page -->
+            <div id="transactionsPage" class="page">
+                <div class="page-header">
+                    <h2>All Transactions</h2>
+                </div>
+
+                <div class="mini-stats-grid" aria-live="polite">
+                    <div class="mini-card">
+                        <div class="mini-label">Transactions</div>
+                        <div id="txStatTotal" class="mini-value">0</div>
+                    </div>
+                    <div class="mini-card">
+                        <div class="mini-label">Income</div>
+                        <div id="txStatIncome" class="mini-value text-success">Rp 0</div>
+                    </div>
+                    <div class="mini-card">
+                        <div class="mini-label">Expense</div>
+                        <div id="txStatExpense" class="mini-value text-danger">Rp 0</div>
+                    </div>
+                    <div class="mini-card">
+                        <div class="mini-label">Net</div>
+                        <div id="txStatBalance" class="mini-value">Rp 0</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="page-header activity-header">
+                        <div class="page-actions actions-stack">
+            <button id="refreshTransactionsBtn" class="btn btn-secondary">
+                🔄 Refresh
+            </button>
+
+            <select id="filterType" class="filter-select">
+                <option value="all">All Types</option>
+                <option value="income">Income Only</option>
+                <option value="expense">Expense Only</option>
+            </select>
+
+            <input
+                type="text"
+                id="filterSearch"
+                class="filter-input"
+                placeholder="Search description or category"
+            >
+
+            <div class="date-range">
+                <input type="date" id="filterStartDate" class="filter-date">
+                <span class="date-separator">→</span>
+                <input type="date" id="filterEndDate" class="filter-date">
+            </div>
+
+            <button id="clearFiltersBtn" class="btn btn-tertiary">
+                Clear
+            </button>
+        </div>
+    </div>
+                    <div class="table-container">
+                        <h2>Add Transactions</h2>
+                        <table id="transactionTable" class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Date</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Details</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionTableBody">
+                                <tr>
+                                        <div class="dual-grid">
+                                            <div class="card">
+                                                <form id="addTransactionForm" class="transaction-form">
+                                                    <div class="form-grid">
+                                                        <div class="form-group">
+                                                            <label for="transactionType">Transaction Type *</label>
+                                                            <select id="transactionType" name="type" required>
+                                                                <option value="income">💰 Income</option>
+                                                                <option value="expense">💸 Expense</option>
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label for="amount">Amount (Rp) *</label>
+                                                            <input type="number" id="amount" name="amount" step="0.01" placeholder="0.00" required>
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label for="description">Description *</label>
+                                                            <input type="text" id="description" name="description" placeholder="Enter description" required>
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label for="date">Date *</label>
+                                                            <input type="date" id="date" name="date" required>
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label for="category">Category *</label>
+                                                            <select id="category" name="category" required>
+                                                                <!-- Categories will be populated dynamically -->
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label id="extraLabel">Source *</label>
+                                                            <input type="text" id="extra" name="extra" placeholder="Enter source" required>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="form-group" id="recurringDiv" style="display: none;">
+                                                        <label class="checkbox-label">
+                                                            <input type="checkbox" id="recurring" name="recurring">
+                                                            <span>This is a recurring expense</span>
+                                                        </label>
+                                                    </div>
+
+                                                    <div class="form-actions">
+                                                        <button type="submit" class="btn btn-primary">
+                                                            💾 Save Transaction
+                                                        </button>
+                                                        <button type="reset" class="btn btn-secondary" id="resetAddForm">
+                                                            🔄 Reset Form
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+
+                                            <div class="card preview-card" id="addPreviewCard" aria-live="polite">
+                                                <div class="preview-header">
+                                                    <span class="preview-badge" id="previewType">Income</span>
+                                                    <div class="preview-amount" id="previewAmount">Rp 0</div>
+                                                    <div class="preview-sub">Net impact updates as you type</div>
+                                                </div>
+                                                <div class="preview-grid">
+                                                    <div>
+                                                        <div class="preview-label">Date</div>
+                                                        <div id="previewDate" class="preview-value">-</div>
+                                                    </div>
+                                                    <div>
+                                                        <div class="preview-label">Category</div>
+                                                        <div id="previewCategory" class="preview-value">-</div>
+                                                    </div>
+                                                    <div>
+                                                        <div class="preview-label">Description</div>
+                                                        <div id="previewDescription" class="preview-value">-</div>
+                                                    </div>
+                                                    <div>
+                                                        <div class="preview-label">Detail</div>
+                                                        <div id="previewDetail" class="preview-value">-</div>
+                                                    </div>
+                                                    <div>
+                                                        <div class="preview-label">Recurring</div>
+                                                        <div id="previewRecurring" class="preview-value">No</div>
+                                                    </div>
+                                                </div>
+                                                <p class="preview-hint">Tip: choose type first to see suggested fields and categories.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                </div>
+
+
             </form>
+                </div>
         </div>
 
-        <!-- Transactions Table -->
+            <!-- Reports Page -->
+            <div id="reportsPage" class="page">
+                <div class="page-header">
+                    <h2>Monthly Reports</h2>
+                    <div class="page-actions">
+                        <input type="month" id="reportMonth" class="month-input">
+                        <button id="generateReportBtn" class="btn btn-primary">
+                            📊 Generate Report
+                        </button>
+                    </div>
+                </div>
         <div class="card">
-            <div class="card-header">
-                <h2>📊 Daftar Transaksi</h2>
-                <div>
-                    <button id="refreshBtn" class="btn btn-secondary">🔄 Refresh</button>
-                    <button id="reportBtn" class="btn btn-secondary">📈 Laporan Bulanan</button>
+                    <div id="reportContent" class="report-content">
+                        <div class="empty-state-large">
+                            <span class="empty-icon">📈</span>
+                            <h3>No Report Generated</h3>
+                            <p>Select a month and click "Generate Report" to view your financial summary</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="table-wrapper">
-                <table id="transactionTable">
+            <!-- Activity Logs Page -->
+            <div id="activityLogsPage" class="page">
+                <div class="page-header">
+                    <h2>Activity Logs</h2>
+                    <div class="page-actions">
+                        <button id="refreshLogsBtn" class="btn btn-secondary">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="table-container">
+                        <table id="activityLogsTable" class="modern-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Tipe</th>
-                            <th>Tanggal</th>
-                            <th>Kategori</th>
-                            <th>Deskripsi</th>
-                            <th>Jumlah</th>
-                            <th>Aksi</th>
+                                    <th>Timestamp</th>
+                                    <th>Activity Type</th>
+                                    <th>Description</th>
                         </tr>
                     </thead>
-                    <tbody id="transactionTableBody">
+                            <tbody id="activityLogsTableBody">
                         <tr>
-                            <td colspan="7" style="text-align: center;">Loading...</td>
+                                    <td colspan="3" class="loading-state">Loading activity logs...</td>
                         </tr>
                     </tbody>
                 </table>
+                    </div>
             </div>
         </div>
 
-        <footer>
-            <p>© 2025 MoneyMate | Built with TypeScript + Spring Boot</p>
-        </footer>
+            <!-- Profile Page -->
+            <div id="profilePage" class="page">
+                <div class="page-header">
+                    <h2>User Profile</h2>
+                </div>
+                <div class="card">
+                    <div id="profileContent" class="profile-content">
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                <span>👤</span>
+                            </div>
+                            <div class="profile-info">
+                                <h3 id="profileUsername">Username</h3>
+                                <p id="profileEmail">email@example.com</p>
+                            </div>
+                        </div>
+                        <div class="profile-details">
+                            <div class="detail-item">
+                                <span class="detail-label">User ID:</span>
+                                <span id="profileUserId" class="detail-value">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Initial Balance:</span>
+                                <span id="profileInitialBalance" class="detail-value">Rp 0</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Account Created:</span>
+                                <span id="profileCreatedAt" class="detail-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
 
     <script type="module" src="dist/app.js"></script>
 </body>

@@ -25,15 +25,24 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Step 3: Start Spring Boot
+# Step 3: Start Frontend Server
 echo
-echo "[3/3] Starting Spring Boot Server..."
+echo "[3/4] Starting Frontend Server on port 3000..."
+cd frontend
+python3 -m http.server 3000 > /dev/null 2>&1 &
+FRONTEND_PID=$!
+cd ..
+echo "Frontend server started (PID: $FRONTEND_PID)"
+
+# Step 4: Start Spring Boot
+echo
+echo "[4/4] Starting Spring Boot Server..."
 echo
 echo "╔════════════════════════════════════════╗"
 echo "║            READY TO USE!               ║"
 echo "╠════════════════════════════════════════╣"
-echo "║  Backend:  http://localhost:8080/api  ║"
-echo "║  Frontend: Open frontend/index.html    ║"
+echo "║  Backend:  http://localhost:8080/api   ║"
+echo "║  Frontend: http://localhost:3000       ║"
 echo "╚════════════════════════════════════════╝"
 echo
 echo "Starting backend server..."
