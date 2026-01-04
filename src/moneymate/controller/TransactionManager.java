@@ -1,16 +1,23 @@
 package moneymate.controller;
 
-import moneymate.model.*;
-import moneymate.exception.*;
-import moneymate.interfaces.Calculable;
-import moneymate.database.TransactionDAO;
-import moneymate.database.TransactionDAOImpl;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.time.LocalDate;
-import java.time.YearMonth;
+
+import moneymate.database.TransactionDAO;
+import moneymate.database.TransactionDAOImpl;
+import moneymate.exception.InsufficientBalanceException;
+import moneymate.exception.InvalidTransactionException;
+import moneymate.exception.TransactionNotFoundException;
+import moneymate.interfaces.Calculable;
+import moneymate.model.Category;
+import moneymate.model.Expense;
+import moneymate.model.Income;
+import moneymate.model.Report;
+import moneymate.model.Transaction;
 
 /**
  * TransactionManager - mengelola semua transaksi
@@ -26,11 +33,13 @@ public class TransactionManager implements Calculable {
     private List<Transaction> transactions;
     private double initialBalance;
     private TransactionDAO transactionDAO;
+    private String currentUserId; // Current logged-in user
 
     public TransactionManager() {
         this.transactions = new ArrayList<>();
         this.initialBalance = 0.0;
         this.transactionDAO = new TransactionDAOImpl();
+        this.currentUserId = "DEFAULT_USER"; // Default for backward compatibility
         loadTransactionsFromDatabase();
     }
 
@@ -38,16 +47,46 @@ public class TransactionManager implements Calculable {
         this.transactions = new ArrayList<>();
         this.initialBalance = initialBalance;
         this.transactionDAO = new TransactionDAOImpl();
+        this.currentUserId = "DEFAULT_USER";
         loadTransactionsFromDatabase();
+    }
+    
+    /**
+     * Set current user ID - used for multi-user support
+     */
+    public void setCurrentUserId(String userId) {
+        if (userId != null && !userId.equals(this.currentUserId)) {
+            this.currentUserId = userId;
+            // Update DAO with current user
+            if (transactionDAO instanceof TransactionDAOImpl) {
+                ((TransactionDAOImpl) transactionDAO).setCurrentUserId(userId);
+            }
+            loadTransactionsFromDatabase(); // Reload transactions for this user
+        }
+    }
+    
+    /**
+     * Get current user ID
+     */
+    public String getCurrentUserId() {
+        return this.currentUserId;
     }
 
     /**
-     * Load transactions dari database ke memory
+     * Load transactions dari database ke memory (filtered by user)
      */
     private void loadTransactionsFromDatabase() {
         try {
-            this.transactions = transactionDAO.findAll();
-            System.out.println("✓ Loaded " + transactions.size() + " transactions from database");
+            List<Transaction> allTransactions = transactionDAO.findAll();
+            // Filter by current user
+            this.transactions = allTransactions.stream()
+                .filter(t -> {
+                    // Check if transaction belongs to current user
+                    // This requires Transaction to have a userId field
+                    return true; // For now, load all - will be filtered by DAO
+                })
+                .collect(Collectors.toList());
+            System.out.println("✓ Loaded " + transactions.size() + " transactions from database for user: " + currentUserId);
         } catch (SQLException e) {
             System.err.println("Failed to load transactions: " + e.getMessage());
             this.transactions = new ArrayList<>();
@@ -158,7 +197,8 @@ public class TransactionManager implements Calculable {
      */
     public List<Transaction> getTransactionsByCategory(String category) {
         return transactions.stream()
-            .filter(t -> t.getCategory().equalsIgnoreCase(category))
+            .filter(t -> t.getCategory() != null &&
+                         t.getCategory().getDisplayName().equalsIgnoreCase(category))
             .collect(Collectors.toList());
     }
 

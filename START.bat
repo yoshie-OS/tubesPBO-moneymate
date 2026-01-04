@@ -29,22 +29,16 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Step 3: Start Frontend Server
+REM Step 3: Start Spring Boot
 echo.
-echo [3/4] Starting Frontend Server on port 3000...
-cd frontend
-start /B python -m http.server 3000 >nul 2>&1
-cd ..
-echo Frontend server started
+echo [3/3] Starting Frontend (http://localhost:3000) and Spring Boot Backend...
+echo.
+start "MoneyMate Frontend" cmd /c "cd /d %~dp0frontend && python -m http.server 3000"
 
-REM Step 4: Start Spring Boot
-echo.
-echo [4/4] Starting Spring Boot Server...
-echo.
 echo ╔════════════════════════════════════════╗
 echo ║            READY TO USE!               ║
 echo ╠════════════════════════════════════════╣
-echo ║  Backend:  http://localhost:8080/api   ║
+echo ║  Backend:  http://localhost:8080/api  ║
 echo ║  Frontend: http://localhost:3000       ║
 echo ╚════════════════════════════════════════╝
 echo.

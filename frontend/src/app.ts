@@ -73,6 +73,13 @@ class MoneyMateAPI {
     }
 
     async addTransaction(data: any): Promise<any> {
+        // Include userId from localStorage
+        const currentUser = localStorage.getItem('currentUser');
+        if (currentUser) {
+            const user = JSON.parse(currentUser);
+            data.userId = user.userId;
+        }
+        
         const response = await fetch(`${this.baseUrl}/transactions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -123,22 +130,34 @@ class MoneyMateAPI {
 
     // Note: These endpoints would need to be implemented in the backend
     async login(username: string, password: string): Promise<any> {
-        // For now, check if user exists in localStorage or use init endpoint
-        // In a full implementation, this would call a backend login endpoint
+        // Call backend login endpoint
         try {
-            const userSetup = localStorage.getItem('userSetup');
-            if (userSetup) {
-                const userData = JSON.parse(userSetup);
-                if (userData.username === username) {
-                    return { success: true, user: userData };
-                }
+            const response = await fetch(`${this.baseUrl}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Login failed');
             }
-            // If no user found, create a simple session
-            const user = { username, email: `${username}@example.com`, initialBalance: 0 };
-            localStorage.setItem('userSetup', JSON.stringify(user));
-            return { success: true, user };
-        } catch (error) {
-            throw new Error('Login failed');
+            
+            const result = await response.json();
+            if (result.success) {
+                // Store user data in localStorage
+                const user = {
+                    userId: result.userId,
+                    username: result.username,
+                    email: result.email,
+                    initialBalance: result.initialBalance
+                };
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                return { success: true, user };
+            }
+            return result;
+        } catch (error: any) {
+            throw new Error(error.message || 'Login failed');
         }
     }
 
@@ -148,11 +167,12 @@ class MoneyMateAPI {
             const result = await this.initUser(data);
             if (result.success) {
                 const user = { 
-                    username: data.username, 
-                    email: data.email, 
-                    initialBalance: data.initialBalance || 0 
+                    userId: result.userId,
+                    username: result.username, 
+                    email: result.email, 
+                    initialBalance: result.initialBalance
                 };
-                localStorage.setItem('userSetup', JSON.stringify(user));
+                localStorage.setItem('currentUser', JSON.stringify(user));
                 return { success: true, user };
             }
             return result;
@@ -181,6 +201,7 @@ class MoneyMateUI {
         this.setupEventListeners();
         this.setupNavigation();
         this.setDefaultDate();
+        this.setDefaultDate2();
         this.updateAddPreview();
         await this.loadDashboard();
     }
@@ -196,21 +217,54 @@ class MoneyMateUI {
 
     private populateCategorySelect(): void {
         const categorySelect = document.getElementById('category') as HTMLSelectElement;
-        if (!categorySelect || !this.categories) return;
+        const categorySelect2 = document.getElementById('category2') as HTMLSelectElement;
+        const filterCategorySelect = document.getElementById('filterCategory') as HTMLSelectElement;
+        
+        if (!this.categories) return;
 
-        // Default to income categories
-        categorySelect.innerHTML = '';
-        this.categories.income.forEach(cat => {
-            const option = document.createElement('option');
-            // Use enum name (e.g., GAJI) as value, displayName as text
-            option.value = cat.name || cat.displayName;
-            option.textContent = cat.displayName || cat.name;
-            categorySelect.appendChild(option);
+        // Populate add transaction category select (default to income)
+        [categorySelect, categorySelect2].forEach(select => {
+            if (select) {
+                select.innerHTML = '';
+                this.categories!.income.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.name || cat.displayName;
+                    option.textContent = cat.displayName || cat.name;
+                    select.appendChild(option);
+                });
+            }
         });
+        
+        // Populate filter category select with all categories
+        if (filterCategorySelect) {
+            filterCategorySelect.innerHTML = '<option value="all">Semua Kategori</option>';
+            
+            // Add income categories
+            const incomeGroup = document.createElement('optgroup');
+            incomeGroup.label = 'Pemasukan';
+            this.categories.income.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.name || cat.displayName;
+                option.textContent = cat.displayName || cat.name;
+                incomeGroup.appendChild(option);
+            });
+            filterCategorySelect.appendChild(incomeGroup);
+            
+            // Add expense categories
+            const expenseGroup = document.createElement('optgroup');
+            expenseGroup.label = 'Pengeluaran';
+            this.categories.expense.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.name || cat.displayName;
+                option.textContent = cat.displayName || cat.name;
+                expenseGroup.appendChild(option);
+            });
+            filterCategorySelect.appendChild(expenseGroup);
+        }
     }
 
     private setupEventListeners(): void {
-        // Transaction form
+        // Transaction form (add-transaction page)
         const addForm = document.getElementById('addTransactionForm') as HTMLFormElement;
         addForm?.addEventListener('submit', (e) => this.handleAddTransaction(e));
         addForm?.addEventListener('reset', () => {
@@ -219,11 +273,23 @@ class MoneyMateUI {
                 this.updateAddPreview();
             }, 0);
         });
+        
+        // Transaction form 2 (transactions page)
+        const addForm2 = document.getElementById('addTransactionForm2') as HTMLFormElement;
+        addForm2?.addEventListener('submit', (e) => this.handleAddTransaction2(e));
+        addForm2?.addEventListener('reset', () => {
+            setTimeout(() => {
+                this.setDefaultDate2();
+            }, 0);
+        });
 
         // Transaction type change
         const typeSelect = document.getElementById('transactionType') as HTMLSelectElement;
         typeSelect?.addEventListener('change', () => this.updateTransactionForm());
         typeSelect?.addEventListener('change', () => this.updateAddPreview());
+        
+        const typeSelect2 = document.getElementById('transactionType2') as HTMLSelectElement;
+        typeSelect2?.addEventListener('change', () => this.updateTransactionForm2());
 
         // Refresh buttons
         const refreshBtn = document.getElementById('refreshTransactionsBtn') as HTMLButtonElement;
@@ -238,7 +304,9 @@ class MoneyMateUI {
 
         // Filter
         const filterType = document.getElementById('filterType') as HTMLSelectElement;
+        const filterCategory = document.getElementById('filterCategory') as HTMLSelectElement;
         filterType?.addEventListener('change', () => this.loadTransactionsPage());
+        filterCategory?.addEventListener('change', () => this.loadTransactionsPage());
 
         const filterSearch = document.getElementById('filterSearch') as HTMLInputElement;
         filterSearch?.addEventListener('input', () => this.loadTransactionsPage());
@@ -254,8 +322,23 @@ class MoneyMateUI {
             if (filterStartDate) filterStartDate.value = '';
             if (filterEndDate) filterEndDate.value = '';
             if (filterType) filterType.value = 'all';
+            if (filterCategory) filterCategory.value = 'all';
             this.loadTransactionsPage();
         });
+        
+        // Export buttons
+        const exportCsvBtn = document.getElementById('exportCsvBtn') as HTMLButtonElement;
+        exportCsvBtn?.addEventListener('click', () => this.exportReportCsv());
+        
+        const exportTxtBtn = document.getElementById('exportTxtBtn') as HTMLButtonElement;
+        exportTxtBtn?.addEventListener('click', () => this.exportReportTxt());
+        
+        // Edit transaction form
+        const editForm = document.getElementById('editTransactionForm') as HTMLFormElement;
+        editForm?.addEventListener('submit', (e) => this.handleEditTransaction(e));
+        
+        const editType = document.getElementById('editType') as HTMLSelectElement;
+        editType?.addEventListener('change', () => this.updateEditTransactionForm());
 
         // Live preview listeners
         ['amount', 'description', 'date', 'category', 'extra', 'recurring'].forEach(id => {
@@ -322,6 +405,7 @@ class MoneyMateUI {
                 this.loadDashboard();
                 break;
             case 'transactions':
+                this.setDefaultDate2();
                 this.loadTransactionsPage();
                 break;
             case 'activity-logs':
@@ -491,7 +575,9 @@ class MoneyMateUI {
             const filterType = (document.getElementById('filterType') as HTMLSelectElement)?.value;
             const filtered = this.applyTransactionFilters(transactions, filterType);
             this.renderTransactions(filtered);
-            this.updateTransactionStats(filtered);
+            
+            // Update stats with ALL transactions (not filtered)
+            this.updateTransactionStats(transactions);
         } catch (error) {
             console.error('Failed to load transactions:', error);
             this.showToast('Failed to load transactions', 'error');
@@ -500,23 +586,38 @@ class MoneyMateUI {
 
     private applyTransactionFilters(transactions: Transaction[], filterType: string | undefined): Transaction[] {
         const search = (document.getElementById('filterSearch') as HTMLInputElement)?.value?.toLowerCase() || '';
+        const category = (document.getElementById('filterCategory') as HTMLSelectElement)?.value || '';
         const startDateStr = (document.getElementById('filterStartDate') as HTMLInputElement)?.value;
         const endDateStr = (document.getElementById('filterEndDate') as HTMLInputElement)?.value;
 
         return transactions.filter(t => {
+            // Filter by type
             const matchesType =
                 filterType === 'income' ? t.transactionType === 'PEMASUKAN' :
                 filterType === 'expense' ? t.transactionType === 'PENGELUARAN' : true;
 
+            // Filter by search text
             const haystack = `${t.description} ${t.category}`.toLowerCase();
             const matchesSearch = search ? haystack.includes(search) : true;
 
+            // Filter by category
+            const matchesCategory = (category && category !== 'all') ? 
+                (t.category === category || (this.getCategoryDisplayName(t.category) === category)) : true;
+
+            // Filter by date range
             const txDate = new Date(t.date);
             const afterStart = startDateStr ? txDate >= new Date(startDateStr) : true;
             const beforeEnd = endDateStr ? txDate <= new Date(endDateStr) : true;
 
-            return matchesType && matchesSearch && afterStart && beforeEnd;
+            return matchesType && matchesSearch && matchesCategory && afterStart && beforeEnd;
         });
+    }
+    
+    private getCategoryDisplayName(category: string): string {
+        if (!this.categories) return category;
+        const allCategories = [...this.categories.income, ...this.categories.expense];
+        const found = allCategories.find(c => c.name === category || c.displayName === category);
+        return found ? found.displayName : category;
     }
 
     private updateTransactionStats(transactions: Transaction[]): void {
@@ -574,13 +675,16 @@ class MoneyMateUI {
             return `
                 <tr>
                     <td>${escapeHtml(tx.transactionId)}</td>
-                    <td><span class="badge ${tx.transactionType === 'PEMASUKAN' ? 'badge-income' : 'badge-expense'}">${tx.transactionType === 'PEMASUKAN' ? 'Income' : 'Expense'}</span></td>
+                    <td><span class="badge ${tx.transactionType === 'PEMASUKAN' ? 'badge-income' : 'badge-expense'}">${tx.transactionType === 'PEMASUKAN' ? 'Pemasukan' : 'Pengeluaran'}</span></td>
                     <td>${this.formatDate(tx.date)}</td>
                     <td>${escapeHtml(categoryDisplay)}</td>
                     <td>${escapeHtml(tx.description)}</td>
                     <td style="font-weight: 600; color: ${tx.transactionType === 'PEMASUKAN' ? '#10b981' : '#ef4444'};">Rp ${this.formatNumber(tx.amount)}</td>
                     <td style="font-size: 12px; color: var(--text-muted);">${escapeHtml(details)}</td>
                     <td>
+                        <button class="btn btn-primary btn-sm" onclick="app.editTransaction('${escapeHtml(tx.transactionId)}')" style="margin-right: 4px;">
+                            ✏️ Edit
+                        </button>
                         <button class="btn btn-danger btn-sm" onclick="app.deleteTransaction('${escapeHtml(tx.transactionId)}')">
                             🗑️ Delete
                         </button>
@@ -610,7 +714,7 @@ class MoneyMateUI {
         try {
             const result = await this.api.addTransaction(data);
             if (result.success) {
-                this.showToast('Transaction added successfully!', 'success');
+                this.showToast('Transaksi berhasil ditambahkan!', 'success');
                 form.reset();
                 // Set default date to today
                 const dateInput = document.getElementById('date') as HTMLInputElement;
@@ -619,25 +723,208 @@ class MoneyMateUI {
                 }
                 this.updateAddPreview();
                 await this.loadDashboard();
-                this.navigateToPage('transactions');
             } else {
-                this.showToast(result.error || 'Failed to add transaction', 'error');
+                this.showToast(result.error || 'Gagal menambahkan transaksi', 'error');
             }
         } catch (error: any) {
-            this.showToast(error.message || 'Failed to add transaction', 'error');
+            this.showToast(error.message || 'Gagal menambahkan transaksi', 'error');
+        }
+    }
+    
+    private async handleAddTransaction2(e: Event): Promise<void> {
+        e.preventDefault();
+
+        const form = e.target as HTMLFormElement;
+        const formData = new FormData(form);
+
+        const data = {
+            type: formData.get('type'),
+            amount: parseFloat(formData.get('amount') as string),
+            description: formData.get('description'),
+            date: formData.get('date'),
+            category: formData.get('category'),
+            source: formData.get('type') === 'income' ? formData.get('extra') : null,
+            paymentMethod: formData.get('type') === 'expense' ? formData.get('extra') : null,
+            recurring: formData.get('recurring') === 'on'
+        };
+
+        try {
+            const result = await this.api.addTransaction(data);
+            if (result.success) {
+                this.showToast('Transaksi berhasil ditambahkan!', 'success');
+                form.reset();
+                this.setDefaultDate2();
+                await this.loadTransactionsPage();
+                await this.loadDashboard();
+            } else {
+                this.showToast(result.error || 'Gagal menambahkan transaksi', 'error');
+            }
+        } catch (error: any) {
+            this.showToast(error.message || 'Gagal menambahkan transaksi', 'error');
+        }
+    }
+    
+    private updateTransactionForm2(): void {
+        const typeSelect = document.getElementById('transactionType2') as HTMLSelectElement;
+        const categorySelect = document.getElementById('category2') as HTMLSelectElement;
+        const extraLabel = document.getElementById('extraLabel2') as HTMLLabelElement;
+        const recurringDiv = document.getElementById('recurringDiv2') as HTMLDivElement;
+        const extraInput = document.getElementById('extra2') as HTMLInputElement;
+
+        if (!typeSelect || !categorySelect || !this.categories) return;
+
+        const isIncome = typeSelect.value === 'income';
+
+        // Update category options
+        categorySelect.innerHTML = '';
+        const categories = isIncome ? this.categories.income : this.categories.expense;
+        categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.name || cat.displayName;
+            option.textContent = cat.displayName || cat.name;
+            categorySelect.appendChild(option);
+        });
+
+        // Update label and recurring field
+        if (extraLabel) {
+            extraLabel.textContent = isIncome ? 'Source *' : 'Payment Method *';
+        }
+        if (extraInput) {
+            extraInput.placeholder = isIncome ? 'Enter source (e.g., Salary, Bonus)' : 'Enter payment method (e.g., Cash, Card)';
+        }
+        if (recurringDiv) {
+            recurringDiv.style.display = isIncome ? 'none' : 'block';
+        }
+    }
+    
+    private setDefaultDate2(): void {
+        const dateInput = document.getElementById('date2') as HTMLInputElement;
+        if (dateInput) {
+            dateInput.value = new Date().toISOString().split('T')[0];
         }
     }
 
     async deleteTransaction(id: string): Promise<void> {
-        if (!confirm('Are you sure you want to delete this transaction?')) return;
+        if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) return;
 
         try {
             await this.api.deleteTransaction(id);
-            this.showToast('Transaction deleted successfully!', 'success');
+            this.showToast('Transaksi berhasil dihapus!', 'success');
             await this.loadTransactionsPage();
             await this.loadDashboard();
         } catch (error) {
-            this.showToast('Failed to delete transaction', 'error');
+            this.showToast('Gagal menghapus transaksi', 'error');
+        }
+    }
+    
+    async editTransaction(id: string): Promise<void> {
+        try {
+            const transactions = await this.api.getTransactions();
+            const tx = transactions.find(t => t.transactionId === id);
+            
+            if (!tx) {
+                this.showToast('Transaksi tidak ditemukan', 'error');
+                return;
+            }
+            
+            // Populate edit form
+            const modal = document.getElementById('editModal');
+            const form = document.getElementById('editTransactionForm') as HTMLFormElement;
+            
+            (document.getElementById('editTransactionId') as HTMLInputElement).value = tx.transactionId;
+            (document.getElementById('editType') as HTMLSelectElement).value = tx.transactionType === 'PEMASUKAN' ? 'income' : 'expense';
+            (document.getElementById('editAmount') as HTMLInputElement).value = tx.amount.toString();
+            (document.getElementById('editDescription') as HTMLInputElement).value = tx.description;
+            (document.getElementById('editDate') as HTMLInputElement).value = tx.date;
+            (document.getElementById('editCategory') as HTMLSelectElement).value = tx.category;
+            
+            if (tx.transactionType === 'PEMASUKAN') {
+                (document.getElementById('editExtra') as HTMLInputElement).value = tx.source || '';
+            } else {
+                (document.getElementById('editExtra') as HTMLInputElement).value = tx.paymentMethod || '';
+                (document.getElementById('editRecurring') as HTMLInputElement).checked = tx.isRecurring || false;
+            }
+            
+            this.updateEditTransactionForm();
+            
+            if (modal) {
+                modal.classList.add('active');
+            }
+        } catch (error) {
+            this.showToast('Gagal memuat data transaksi', 'error');
+        }
+    }
+    
+    closeEditModal(): void {
+        const modal = document.getElementById('editModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    }
+    
+    private updateEditTransactionForm(): void {
+        const typeSelect = document.getElementById('editType') as HTMLSelectElement;
+        const categorySelect = document.getElementById('editCategory') as HTMLSelectElement;
+        const extraLabel = document.getElementById('editExtraLabel') as HTMLLabelElement;
+        const recurringDiv = document.getElementById('editRecurringDiv') as HTMLDivElement;
+        const extraInput = document.getElementById('editExtra') as HTMLInputElement;
+
+        if (!typeSelect || !categorySelect || !this.categories) return;
+
+        const isIncome = typeSelect.value === 'income';
+
+        // Update category options
+        categorySelect.innerHTML = '';
+        const categories = isIncome ? this.categories.income : this.categories.expense;
+        categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.name || cat.displayName;
+            option.textContent = cat.displayName || cat.name;
+            categorySelect.appendChild(option);
+        });
+
+        // Update label and recurring field
+        if (extraLabel) {
+            extraLabel.textContent = isIncome ? 'Source *' : 'Payment Method *';
+        }
+        if (extraInput) {
+            extraInput.placeholder = isIncome ? 'Enter source (e.g., Salary, Bonus)' : 'Enter payment method (e.g., Cash, Card)';
+        }
+        if (recurringDiv) {
+            recurringDiv.style.display = isIncome ? 'none' : 'block';
+        }
+    }
+    
+    private async handleEditTransaction(e: Event): Promise<void> {
+        e.preventDefault();
+        
+        const form = e.target as HTMLFormElement;
+        const formData = new FormData(form);
+        const id = (document.getElementById('editTransactionId') as HTMLInputElement).value;
+
+        const data = {
+            type: formData.get('type'),
+            amount: parseFloat(formData.get('amount') as string),
+            description: formData.get('description'),
+            date: formData.get('date'),
+            category: formData.get('category'),
+            source: formData.get('type') === 'income' ? formData.get('extra') : null,
+            paymentMethod: formData.get('type') === 'expense' ? formData.get('extra') : null,
+            recurring: formData.get('recurring') === 'on'
+        };
+
+        try {
+            // First delete old transaction
+            await this.api.deleteTransaction(id);
+            // Then add updated transaction
+            await this.api.addTransaction(data);
+            
+            this.showToast('Transaksi berhasil diupdate!', 'success');
+            this.closeEditModal();
+            await this.loadTransactionsPage();
+            await this.loadDashboard();
+        } catch (error: any) {
+            this.showToast(error.message || 'Gagal mengupdate transaksi', 'error');
         }
     }
 
@@ -656,30 +943,198 @@ class MoneyMateUI {
             const report = await this.api.getMonthlyReport(month);
             const container = document.getElementById('reportContent');
             if (!container) return;
+            
+            // Store report data for export
+            (window as any).currentReport = report;
+            (window as any).currentReportMonth = month;
+            
+            // Show export buttons
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+            const exportTxtBtn = document.getElementById('exportTxtBtn');
+            if (exportCsvBtn) exportCsvBtn.style.display = 'inline-block';
+            if (exportTxtBtn) exportTxtBtn.style.display = 'inline-block';
+            
+            // Calculate percentages
+            const total = report.totalExpense;
+            const expenseCategories = Object.entries(report.expenseByCategory || {})
+                .map(([category, amount]: [string, any]) => ({
+                    category: this.getCategoryDisplayName(category),
+                    amount: amount as number,
+                    percentage: total > 0 ? ((amount as number / total) * 100).toFixed(2) : '0.00'
+                }))
+                .sort((a, b) => b.amount - a.amount);
+            
+            const incomeCategories = Object.entries(report.incomeByCategory || {})
+                .map(([category, amount]: [string, any]) => ({
+                    category: this.getCategoryDisplayName(category),
+                    amount: amount as number,
+                    percentage: report.totalIncome > 0 ? ((amount as number / report.totalIncome) * 100).toFixed(2) : '0.00'
+                }))
+                .sort((a, b) => b.amount - a.amount);
 
             container.innerHTML = `
                 <div style="padding: 24px;">
-                    <h3 style="margin-bottom: 24px; color: var(--text-primary);">Monthly Report - ${month}</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <div style="background: var(--bg-secondary); padding: 16px; border-radius: var(--radius-md);">
-                            <div style="color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">Total Income</div>
-                            <div style="font-size: 24px; font-weight: 700; color: #10b981;">Rp ${this.formatNumber(report.totalIncome)}</div>
+                    <h3 style="margin-bottom: 24px; color: var(--text-primary);">Laporan Bulanan - ${month}</h3>
+                    
+                    <!-- Summary Cards -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">
+                        <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md);">
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Total Pemasukan</div>
+                            <div style="font-size: 28px; font-weight: 700; color: #10b981;">Rp ${this.formatNumber(report.totalIncome)}</div>
                         </div>
-                        <div style="background: var(--bg-secondary); padding: 16px; border-radius: var(--radius-md);">
-                            <div style="color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">Total Expense</div>
-                            <div style="font-size: 24px; font-weight: 700; color: #ef4444;">Rp ${this.formatNumber(report.totalExpense)}</div>
+                        <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md);">
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Total Pengeluaran</div>
+                            <div style="font-size: 28px; font-weight: 700; color: #ef4444;">Rp ${this.formatNumber(report.totalExpense)}</div>
                         </div>
-                        <div style="background: var(--bg-secondary); padding: 16px; border-radius: var(--radius-md);">
-                            <div style="color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">Balance</div>
-                            <div style="font-size: 24px; font-weight: 700; color: var(--primary-color);">Rp ${this.formatNumber(report.balance)}</div>
+                        <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md);">
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Saldo</div>
+                            <div style="font-size: 28px; font-weight: 700; color: var(--primary-color);">Rp ${this.formatNumber(report.balance)}</div>
                         </div>
                     </div>
-                    <pre style="background: var(--bg-secondary); padding: 16px; border-radius: var(--radius-md); overflow-x: auto; font-family: 'Courier New', monospace; font-size: 12px; color: var(--text-secondary);">${report.summary || 'No detailed summary available'}</pre>
+                    
+                    <!-- Expense Breakdown -->
+                    <div style="margin-bottom: 32px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 16px;">Rincian Pengeluaran per Kategori</h4>
+                        <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md);">
+                            ${expenseCategories.length > 0 ? expenseCategories.map(cat => `
+                                <div class="category-percentage">
+                                    <div class="category-name">${cat.category}</div>
+                                    <div class="category-bar">
+                                        <div class="category-bar-fill" style="width: ${cat.percentage}%">
+                                            ${cat.percentage}%
+                                        </div>
+                                    </div>
+                                    <div class="category-amount">Rp ${this.formatNumber(cat.amount)}</div>
+                                </div>
+                            `).join('') : '<p style="color: var(--text-muted);">Tidak ada pengeluaran</p>'}
+                        </div>
+                    </div>
+                    
+                    <!-- Income Breakdown -->
+                    <div style="margin-bottom: 32px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 16px;">Rincian Pemasukan per Kategori</h4>
+                        <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md);">
+                            ${incomeCategories.length > 0 ? incomeCategories.map(cat => `
+                                <div class="category-percentage">
+                                    <div class="category-name">${cat.category}</div>
+                                    <div class="category-bar">
+                                        <div class="category-bar-fill" style="width: ${cat.percentage}%; background: linear-gradient(90deg, #10b981, #34d399)">
+                                            ${cat.percentage}%
+                                        </div>
+                                    </div>
+                                    <div class="category-amount">Rp ${this.formatNumber(cat.amount)}</div>
+                                </div>
+                            `).join('') : '<p style="color: var(--text-muted);">Tidak ada pemasukan</p>'}
+                        </div>
+                    </div>
+                    
+                    <!-- Summary Text -->
+                    <div style="margin-top: 32px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 16px;">Ringkasan Lengkap</h4>
+                        <pre style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md); overflow-x: auto; font-family: 'Courier New', monospace; font-size: 13px; color: var(--text-secondary); line-height: 1.6;">${report.summary || 'Tidak ada ringkasan tersedia'}</pre>
+                    </div>
                 </div>
             `;
         } catch (error) {
-            this.showToast('Failed to generate report', 'error');
+            this.showToast('Gagal generate laporan', 'error');
         }
+    }
+    
+    private exportReportCsv(): void {
+        const report = (window as any).currentReport;
+        const month = (window as any).currentReportMonth;
+        
+        if (!report) {
+            this.showToast('Tidak ada laporan untuk di-export', 'error');
+            return;
+        }
+        
+        let csv = 'MoneyMate - Laporan Bulanan\\n';
+        csv += `Bulan: ${month}\\n\\n`;
+        csv += 'RINGKASAN\\n';
+        csv += 'Kategori,Jumlah\\n';
+        csv += `Total Pemasukan,${report.totalIncome}\\n`;
+        csv += `Total Pengeluaran,${report.totalExpense}\\n`;
+        csv += `Saldo,${report.balance}\\n\\n`;
+        
+        csv += 'PEMASUKAN PER KATEGORI\\n';
+        csv += 'Kategori,Jumlah,Persentase\\n';
+        Object.entries(report.incomeByCategory || {}).forEach(([category, amount]: [string, any]) => {
+            const percentage = report.totalIncome > 0 ? ((amount / report.totalIncome) * 100).toFixed(2) : '0.00';
+            csv += `${this.getCategoryDisplayName(category)},${amount},${percentage}%\\n`;
+        });
+        
+        csv += '\\nPENGELUARAN PER KATEGORI\\n';
+        csv += 'Kategori,Jumlah,Persentase\\n';
+        Object.entries(report.expenseByCategory || {}).forEach(([category, amount]: [string, any]) => {
+            const percentage = report.totalExpense > 0 ? ((amount / report.totalExpense) * 100).toFixed(2) : '0.00';
+            csv += `${this.getCategoryDisplayName(category)},${amount},${percentage}%\\n`;
+        });
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        this.downloadFile(csv, `MoneyMate_Report_${month}_${timestamp}.csv`, 'text/csv');
+        this.showToast('Laporan CSV berhasil di-export!', 'success');
+    }
+    
+    private exportReportTxt(): void {
+        const report = (window as any).currentReport;
+        const month = (window as any).currentReportMonth;
+        
+        if (!report) {
+            this.showToast('Tidak ada laporan untuk di-export', 'error');
+            return;
+        }
+        
+        let txt = '=' .repeat(60) + '\\n';
+        txt += 'MoneyMate - Laporan Bulanan\\n';
+        txt += '=' .repeat(60) + '\\n';
+        txt += `Bulan: ${month}\\n`;
+        txt += `Tanggal Export: ${new Date().toLocaleString('id-ID')}\\n`;
+        txt += '=' .repeat(60) + '\\n\\n';
+        
+        txt += 'RINGKASAN\\n';
+        txt += '-'.repeat(60) + '\\n';
+        txt += `Total Pemasukan    : Rp ${this.formatNumber(report.totalIncome)}\\n`;
+        txt += `Total Pengeluaran  : Rp ${this.formatNumber(report.totalExpense)}\\n`;
+        txt += `Saldo             : Rp ${this.formatNumber(report.balance)}\\n`;
+        txt += '\\n';
+        
+        txt += 'PEMASUKAN PER KATEGORI\\n';
+        txt += '-'.repeat(60) + '\\n';
+        Object.entries(report.incomeByCategory || {}).forEach(([category, amount]: [string, any]) => {
+            const percentage = report.totalIncome > 0 ? ((amount / report.totalIncome) * 100).toFixed(2) : '0.00';
+            txt += `${this.getCategoryDisplayName(category).padEnd(25)} : Rp ${this.formatNumber(amount).padStart(15)} (${percentage}%)\\n`;
+        });
+        
+        txt += '\\nPENGELUARAN PER KATEGORI\\n';
+        txt += '-'.repeat(60) + '\\n';
+        Object.entries(report.expenseByCategory || {}).forEach(([category, amount]: [string, any]) => {
+            const percentage = report.totalExpense > 0 ? ((amount / report.totalExpense) * 100).toFixed(2) : '0.00';
+            txt += `${this.getCategoryDisplayName(category).padEnd(25)} : Rp ${this.formatNumber(amount).padStart(15)} (${percentage}%)\\n`;
+        });
+        
+        txt += '\\n\\nRINGKASAN DETAIL\\n';
+        txt += '-'.repeat(60) + '\\n';
+        txt += report.summary || 'Tidak ada ringkasan tersedia';
+        txt += '\\n\\n' + '='.repeat(60) + '\\n';
+        txt += 'Generated by MoneyMate - Personal Finance Manager\\n';
+        txt += '='.repeat(60) + '\\n';
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        this.downloadFile(txt, `MoneyMate_Report_${month}_${timestamp}.txt`, 'text/plain');
+        this.showToast('Laporan TXT berhasil di-export!', 'success');
+    }
+    
+    private downloadFile(content: string, filename: string, mimeType: string): void {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     private async loadActivityLogs(): Promise<void> {
@@ -729,8 +1184,7 @@ class MoneyMateUI {
 
     private logout(): void {
         if (confirm('Are you sure you want to logout?')) {
-            localStorage.removeItem('userSetup');
-            localStorage.removeItem('currentUser');
+            localStorage.clear();
             window.location.reload();
         }
     }
@@ -931,10 +1385,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const result = await api.register({ username, email, password, initialBalance });
             if (result.success) {
-                const user = { username, email, initialBalance };
-                localStorage.setItem('userSetup', JSON.stringify(user));
                 showToast('Registration successful!', 'success');
-                showMainApp(user);
+                showMainApp(result.user);
             } else {
                 showToast(result.error || 'Registration failed', 'error');
             }
@@ -953,9 +1405,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Check if user is already logged in
-    const userSetup = localStorage.getItem('userSetup');
-    if (userSetup) {
-        const userData = JSON.parse(userSetup);
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+        const userData = JSON.parse(currentUser);
         showMainApp(userData);
     } else {
         showAuthModal();
