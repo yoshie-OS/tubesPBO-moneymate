@@ -12,11 +12,11 @@ public abstract class Transaction {
     protected double amount;
     protected String description;
     protected LocalDate date;
-    protected String category;
+    protected Category category;
 
     protected static int transactionCounter = 0;
 
-    public Transaction(double amount, String description, LocalDate date, String category) {
+    public Transaction(double amount, String description, LocalDate date, Category category) {
         this.transactionId = generateTransactionId();
         this.amount = amount;
         this.description = description;
@@ -49,7 +49,7 @@ public abstract class Transaction {
         return date;
     }
     
-    public String getCategory() {
+    public Category getCategory() {
         return category;
     }
 
@@ -66,7 +66,7 @@ public abstract class Transaction {
         this.date = date;
     }
 
-    public void setCategory(String category) {
+    public void setCategory(Category category) {
         this.category = category;
     }
     
@@ -88,7 +88,7 @@ public abstract class Transaction {
                            getTransactionType(),
                            date.format(formatter),
                            amount,
-                           category,
+                           category != null ? category.getDisplayName() : "Unknown",
                            description);
     }
 }

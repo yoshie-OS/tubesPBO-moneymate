@@ -87,12 +87,12 @@
                     <span class="nav-icon">💳</span>
                     <span class="nav-text">Transactions</span>
                 </a>
-
+                
                 <a href="#" class="nav-item" data-page="reports">
                     <span class="nav-icon">📈</span>
                     <span class="nav-text">Reports</span>
                 </a>
-
+                
                 <a href="#" class="nav-item" data-page="profile">
                     <span class="nav-icon">👤</span>
                     <span class="nav-text">Profile</span>
@@ -176,183 +176,271 @@
                     </div>
                 </div>
 
-            <!-- Transactions Page -->
+            <!-- Transactions Page (Add Transaction) -->
             <div id="transactionsPage" class="page">
                 <div class="page-header">
-                    <h2>All Transactions</h2>
+                    <h2>Add Transaction</h2>
                 </div>
 
-                <div class="mini-stats-grid" aria-live="polite">
-                    <div class="mini-card">
-                        <div class="mini-label">Transactions</div>
-                        <div id="txStatTotal" class="mini-value">0</div>
-                    </div>
-                    <div class="mini-card">
-                        <div class="mini-label">Income</div>
-                        <div id="txStatIncome" class="mini-value text-success">Rp 0</div>
-                    </div>
-                    <div class="mini-card">
-                        <div class="mini-label">Expense</div>
-                        <div id="txStatExpense" class="mini-value text-danger">Rp 0</div>
-                    </div>
-                    <div class="mini-card">
-                        <div class="mini-label">Net</div>
-                        <div id="txStatBalance" class="mini-value">Rp 0</div>
-                    </div>
-                </div>
+                <!-- Add Transaction Form -->
                 <div class="card">
-                    <div class="page-header activity-header">
-                        <div class="page-actions actions-stack">
-            <button id="refreshTransactionsBtn" class="btn btn-secondary">
-                🔄 Refresh
-            </button>
+                    <form id="addTransactionForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="transactionType">Tipe Transaksi *</label>
+                                <select id="transactionType" name="type" required>
+                                    <option value="income">💰 Pemasukan</option>
+                                    <option value="expense">💸 Pengeluaran</option>
+                                </select>
+                            </div>
 
-            <select id="filterType" class="filter-select">
-                <option value="all">All Types</option>
-                <option value="income">Income Only</option>
-                <option value="expense">Expense Only</option>
-            </select>
+                            <div class="form-group">
+                                <label for="amount">Jumlah (Rp) *</label>
+                                <input type="number" id="amount" name="amount" step="0.01" placeholder="0.00" required>
+                            </div>
 
-            <input
-                type="text"
-                id="filterSearch"
-                class="filter-input"
-                placeholder="Search description or category"
-            >
+                            <div class="form-group">
+                                <label for="description">Deskripsi</label>
+                                <input type="text" id="description" name="description" placeholder="Masukkan deskripsi (opsional)">
+                            </div>
 
-            <div class="date-range">
-                <input type="date" id="filterStartDate" class="filter-date">
-                <span class="date-separator">→</span>
-                <input type="date" id="filterEndDate" class="filter-date">
-            </div>
+                            <div class="form-group">
+                                <label for="date">Tanggal *</label>
+                                <input type="date" id="date" name="date" required>
+                            </div>
 
-            <button id="clearFiltersBtn" class="btn btn-tertiary">
-                Clear
-            </button>
-        </div>
-    </div>
+                            <div class="form-group">
+                                <label for="category">Kategori *</label>
+                                <select id="category" name="category" required>
+                                    <!-- Categories will be populated dynamically -->
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label id="extraLabel">Source *</label>
+                                <input type="text" id="extra" name="extra" placeholder="Masukkan sumber" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="recurringDiv" style="display: none;">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="recurring" name="recurring">
+                                <span>Ini adalah pengeluaran berulang</span>
+                            </label>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                💾 Simpan Transaksi
+                            </button>
+                            <button type="reset" class="btn btn-secondary">
+                                🔄 Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Filter dan Log Activity Section -->
+                <div class="card" style="margin-top: 24px;">
+                    <h3 style="padding: 20px 20px 0; margin: 0;">Filter dan Log Activity</h3>
+                    <div class="filters-section">
+                        <div class="filters-grid">
+                            <div class="filter-group">
+                                <label for="filterType">Tipe Transaksi</label>
+                                <select id="filterType" class="filter-select">
+                                    <option value="all">Semua Tipe</option>
+                                    <option value="income">Pemasukan</option>
+                                    <option value="expense">Pengeluaran</option>
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="filterCategory">Kategori</label>
+                                <select id="filterCategory" class="filter-select">
+                                    <option value="all">Semua Kategori</option>
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="filterStartDate">Dari Tanggal</label>
+                                <input type="date" id="filterStartDate" class="filter-input">
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="filterEndDate">Sampai Tanggal</label>
+                                <input type="date" id="filterEndDate" class="filter-input">
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="filterSearch">Cari Deskripsi</label>
+                                <input type="text" id="filterSearch" class="filter-input" placeholder="Cari deskripsi...">
+                            </div>
+                        </div>
+                        <div class="filter-actions">
+                            <button id="clearFiltersBtn" class="btn btn-secondary">
+                                🔄 Reset Filter
+                            </button>
+                            <button id="refreshTransactionsBtn" class="btn btn-primary">
+                                🔍 Terapkan Filter
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="mini-stats-grid" aria-live="polite" style="margin: 20px; margin-bottom: 0;">
+                        <div class="mini-card">
+                            <div class="mini-label">Total Transaksi</div>
+                            <div id="txStatTotal" class="mini-value">0</div>
+                        </div>
+                        <div class="mini-card">
+                            <div class="mini-label">Pemasukan</div>
+                            <div id="txStatIncome" class="mini-value text-success">Rp 0</div>
+                        </div>
+                        <div class="mini-card">
+                            <div class="mini-label">Pengeluaran</div>
+                            <div id="txStatExpense" class="mini-value text-danger">Rp 0</div>
+                        </div>
+                        <div class="mini-card">
+                            <div class="mini-label">Net</div>
+                            <div id="txStatBalance" class="mini-value">Rp 0</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Transactions Table -->
                     <div class="table-container">
-                        <h2>Add Transactions</h2>
                         <table id="transactionTable" class="modern-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Type</th>
-                                    <th>Date</th>
-                                    <th>Category</th>
-                                    <th>Description</th>
-                                    <th>Amount</th>
-                                    <th>Details</th>
-                                    <th>Actions</th>
+                                    <th>Tipe</th>
+                                    <th>Tanggal</th>
+                                    <th>Kategori</th>
+                                    <th>Deskripsi</th>
+                                    <th>Jumlah</th>
+                                    <th>Detail</th>
+                                    <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="transactionTableBody">
                                 <tr>
-                                        <div class="dual-grid">
-                                            <div class="card">
-                                                <form id="addTransactionForm" class="transaction-form">
-                                                    <div class="form-grid">
-                                                        <div class="form-group">
-                                                            <label for="transactionType">Transaction Type *</label>
-                                                            <select id="transactionType" name="type" required>
-                                                                <option value="income">💰 Income</option>
-                                                                <option value="expense">💸 Expense</option>
-                                                            </select>
-                                                        </div>
+                                    <td colspan="8" class="loading-state">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-                                                        <div class="form-group">
-                                                            <label for="amount">Amount (Rp) *</label>
-                                                            <input type="number" id="amount" name="amount" step="0.01" placeholder="0.00" required>
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label for="description">Description *</label>
-                                                            <input type="text" id="description" name="description" placeholder="Enter description" required>
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label for="date">Date *</label>
-                                                            <input type="date" id="date" name="date" required>
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label for="category">Category *</label>
-                                                            <select id="category" name="category" required>
-                                                                <!-- Categories will be populated dynamically -->
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label id="extraLabel">Source *</label>
-                                                            <input type="text" id="extra" name="extra" placeholder="Enter source" required>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="form-group" id="recurringDiv" style="display: none;">
-                                                        <label class="checkbox-label">
-                                                            <input type="checkbox" id="recurring" name="recurring">
-                                                            <span>This is a recurring expense</span>
-                                                        </label>
-                                                    </div>
-
-                                                    <div class="form-actions">
-                                                        <button type="submit" class="btn btn-primary">
-                                                            💾 Save Transaction
-                                                        </button>
-                                                        <button type="reset" class="btn btn-secondary" id="resetAddForm">
-                                                            🔄 Reset Form
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                            </div>
-
-                                            <div class="card preview-card" id="addPreviewCard" aria-live="polite">
-                                                <div class="preview-header">
-                                                    <span class="preview-badge" id="previewType">Income</span>
-                                                    <div class="preview-amount" id="previewAmount">Rp 0</div>
-                                                    <div class="preview-sub">Net impact updates as you type</div>
-                                                </div>
-                                                <div class="preview-grid">
-                                                    <div>
-                                                        <div class="preview-label">Date</div>
-                                                        <div id="previewDate" class="preview-value">-</div>
-                                                    </div>
-                                                    <div>
-                                                        <div class="preview-label">Category</div>
-                                                        <div id="previewCategory" class="preview-value">-</div>
-                                                    </div>
-                                                    <div>
-                                                        <div class="preview-label">Description</div>
-                                                        <div id="previewDescription" class="preview-value">-</div>
-                                                    </div>
-                                                    <div>
-                                                        <div class="preview-label">Detail</div>
-                                                        <div id="previewDetail" class="preview-value">-</div>
-                                                    </div>
-                                                    <div>
-                                                        <div class="preview-label">Recurring</div>
-                                                        <div id="previewRecurring" class="preview-value">No</div>
-                                                    </div>
-                                                </div>
-                                                <p class="preview-hint">Tip: choose type first to see suggested fields and categories.</p>
-                                            </div>
-                                        </div>
+            <!-- Add Transaction Page (yang di menu) -->
+            <div id="add-transactionPage" class="page">
+                <div class="page-header">
+                    <h2>Tambah Transaksi</h2>
+                </div>
+                <div class="card">
+                    <div class="dual-grid">
+                        <div class="card">
+                            <form id="addTransactionForm2" class="transaction-form">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="transactionType2">Tipe Transaksi *</label>
+                                        <select id="transactionType2" name="type" required>
+                                            <option value="income">💰 Pemasukan</option>
+                                            <option value="expense">💸 Pengeluaran</option>
+                                        </select>
                                     </div>
-                </div>
 
+                                    <div class="form-group">
+                                        <label for="amount2">Jumlah (Rp) *</label>
+                                        <input type="number" id="amount2" name="amount" step="0.01" placeholder="0.00" required>
+                                    </div>
 
-            </form>
+                                    <div class="form-group">
+                                        <label for="description2">Deskripsi</label>
+                                        <input type="text" id="description2" name="description" placeholder="Masukkan deskripsi (opsional)">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="date2">Tanggal *</label>
+                                        <input type="date" id="date2" name="date" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="category2">Kategori *</label>
+                                        <select id="category2" name="category" required>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label id="extraLabel2">Source *</label>
+                                        <input type="text" id="extra2" name="extra" placeholder="Masukkan sumber" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group" id="recurringDiv2" style="display: none;">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="recurring2" name="recurring">
+                                        <span>Ini adalah pengeluaran berulang</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">
+                                        💾 Simpan Transaksi
+                                    </button>
+                                    <button type="reset" class="btn btn-secondary">
+                                        🔄 Reset
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="card preview-card" id="addPreviewCard" aria-live="polite">
+                            <div class="preview-header">
+                                <span class="preview-badge" id="previewType">Pemasukan</span>
+                                <div class="preview-amount" id="previewAmount">Rp 0</div>
+                                <div class="preview-sub">Preview transaksi</div>
+                            </div>
+                            <div class="preview-grid">
+                                <div>
+                                    <div class="preview-label">Tanggal</div>
+                                    <div id="previewDate" class="preview-value">-</div>
+                                </div>
+                                <div>
+                                    <div class="preview-label">Kategori</div>
+                                    <div id="previewCategory" class="preview-value">-</div>
+                                </div>
+                                <div>
+                                    <div class="preview-label">Deskripsi</div>
+                                    <div id="previewDescription" class="preview-value">-</div>
+                                </div>
+                                <div>
+                                    <div class="preview-label">Detail</div>
+                                    <div id="previewDetail" class="preview-value">-</div>
+                                </div>
+                                <div>
+                                    <div class="preview-label">Recurring</div>
+                                    <div id="previewRecurring" class="preview-value">Tidak</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-        </div>
+            </div>
 
             <!-- Reports Page -->
             <div id="reportsPage" class="page">
                 <div class="page-header">
-                    <h2>Monthly Reports</h2>
+                    <h2>Laporan Bulanan</h2>
                     <div class="page-actions">
                         <input type="month" id="reportMonth" class="month-input">
                         <button id="generateReportBtn" class="btn btn-primary">
-                            📊 Generate Report
+                            📊 Generate Laporan
+                        </button>
+                        <button id="exportCsvBtn" class="btn btn-success" style="display: none;">
+                            📄 Export CSV
+                        </button>
+                        <button id="exportTxtBtn" class="btn btn-info" style="display: none;">
+                            📝 Export TXT
                         </button>
                     </div>
                 </div>
@@ -360,8 +448,8 @@
                     <div id="reportContent" class="report-content">
                         <div class="empty-state-large">
                             <span class="empty-icon">📈</span>
-                            <h3>No Report Generated</h3>
-                            <p>Select a month and click "Generate Report" to view your financial summary</p>
+                            <h3>Belum Ada Laporan</h3>
+                            <p>Pilih bulan dan klik "Generate Laporan" untuk melihat ringkasan keuangan</p>
                         </div>
                     </div>
                 </div>
@@ -435,6 +523,66 @@
 
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
+
+    <!-- Edit Transaction Modal -->
+    <div id="editModal" class="edit-modal">
+        <div class="edit-modal-content">
+            <h3>Edit Transaksi</h3>
+            <form id="editTransactionForm">
+                <input type="hidden" id="editTransactionId">
+                
+                <div class="form-group">
+                    <label for="editType">Tipe Transaksi</label>
+                    <select id="editType" name="type" required>
+                        <option value="income">Pemasukan</option>
+                        <option value="expense">Pengeluaran</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editAmount">Jumlah (Rp)</label>
+                    <input type="number" id="editAmount" name="amount" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editDescription">Deskripsi</label>
+                    <input type="text" id="editDescription" name="description" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editDate">Tanggal</label>
+                    <input type="date" id="editDate" name="date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editCategory">Kategori</label>
+                    <select id="editCategory" name="category" required>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label id="editExtraLabel">Source</label>
+                    <input type="text" id="editExtra" name="extra" required>
+                </div>
+                
+                <div class="form-group" id="editRecurringDiv">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="editRecurring" name="recurring">
+                        <span>Ini adalah pengeluaran berulang</span>
+                    </label>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        💾 Simpan Perubahan
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="app.closeEditModal()">
+                        ❌ Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script type="module" src="dist/app.js"></script>
 </body>

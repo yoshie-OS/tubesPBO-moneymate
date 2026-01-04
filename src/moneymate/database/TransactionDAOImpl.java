@@ -1,11 +1,19 @@
 package moneymate.database;
 
-import moneymate.model.*;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+
+import moneymate.model.Category;
+import moneymate.model.Expense;
+import moneymate.model.Income;
+import moneymate.model.Transaction;
 
 /**
  * TransactionDAOImpl - Implementasi TransactionDAO untuk SQLite
@@ -18,39 +26,48 @@ import java.util.List;
 public class TransactionDAOImpl implements TransactionDAO {
 
     private final Connection connection;
+    private String currentUserId = "DEFAULT_USER"; // For backward compatibility
 
     public TransactionDAOImpl() {
         this.connection = DatabaseManager.getInstance().getConnection();
+    }
+    
+    /**
+     * Set current user ID for filtering transactions
+     */
+    public void setCurrentUserId(String userId) {
+        this.currentUserId = userId != null ? userId : "DEFAULT_USER";
     }
 
     @Override
     public void save(Transaction transaction) throws SQLException {
         String sql = """
             INSERT INTO transactions (
-                transaction_id, transaction_type, amount, description,
+                transaction_id, user_id, transaction_type, amount, description,
                 date, category, source, payment_method, is_recurring
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, transaction.getTransactionId());
-            pstmt.setString(2, transaction.getTransactionType());
-            pstmt.setDouble(3, transaction.getAmount());
-            pstmt.setString(4, transaction.getDescription());
-            pstmt.setString(5, transaction.getDate().toString());
-            pstmt.setString(6, transaction.getCategory()); // Now stores String directly
+            pstmt.setString(2, currentUserId);
+            pstmt.setString(3, transaction.getTransactionType());
+            pstmt.setDouble(4, transaction.getAmount());
+            pstmt.setString(5, transaction.getDescription());
+            pstmt.setString(6, transaction.getDate().toString());
+            pstmt.setString(7, transaction.getCategory() != null ? transaction.getCategory().getDisplayName() : null);
 
             // Polymorphism: Handle Income vs Expense specific fields
             if (transaction instanceof Income) {
                 Income income = (Income) transaction;
-                pstmt.setString(7, income.getSource());
-                pstmt.setNull(8, Types.VARCHAR);
-                pstmt.setInt(9, 0);
+                pstmt.setString(8, income.getSource());
+                pstmt.setNull(9, Types.VARCHAR);
+                pstmt.setInt(10, 0);
             } else if (transaction instanceof Expense) {
                 Expense expense = (Expense) transaction;
-                pstmt.setNull(7, Types.VARCHAR);
-                pstmt.setString(8, expense.getPaymentMethod());
-                pstmt.setInt(9, expense.isRecurring() ? 1 : 0);
+                pstmt.setNull(8, Types.VARCHAR);
+                pstmt.setString(9, expense.getPaymentMethod());
+                pstmt.setInt(10, expense.isRecurring() ? 1 : 0);
             }
 
             pstmt.executeUpdate();
@@ -64,7 +81,7 @@ public class TransactionDAOImpl implements TransactionDAO {
                 transaction_type = ?, amount = ?, description = ?,
                 date = ?, category = ?, source = ?,
                 payment_method = ?, is_recurring = ?
-            WHERE transaction_id = ?
+            WHERE transaction_id = ? AND user_id = ?
         """;
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -72,7 +89,7 @@ public class TransactionDAOImpl implements TransactionDAO {
             pstmt.setDouble(2, transaction.getAmount());
             pstmt.setString(3, transaction.getDescription());
             pstmt.setString(4, transaction.getDate().toString());
-            pstmt.setString(5, transaction.getCategory()); // Now stores String directly
+            pstmt.setString(5, transaction.getCategory() != null ? transaction.getCategory().getDisplayName() : null);
 
             if (transaction instanceof Income) {
                 Income income = (Income) transaction;
@@ -87,26 +104,29 @@ public class TransactionDAOImpl implements TransactionDAO {
             }
 
             pstmt.setString(9, transaction.getTransactionId());
+            pstmt.setString(10, currentUserId);
             pstmt.executeUpdate();
         }
     }
 
     @Override
     public void delete(String transactionId) throws SQLException {
-        String sql = "DELETE FROM transactions WHERE transaction_id = ?";
+        String sql = "DELETE FROM transactions WHERE transaction_id = ? AND user_id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, transactionId);
+            pstmt.setString(2, currentUserId);
             pstmt.executeUpdate();
         }
     }
 
     @Override
     public Transaction findById(String transactionId) throws SQLException {
-        String sql = "SELECT * FROM transactions WHERE transaction_id = ?";
+        String sql = "SELECT * FROM transactions WHERE transaction_id = ? AND user_id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, transactionId);
+            pstmt.setString(2, currentUserId);
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
@@ -118,11 +138,12 @@ public class TransactionDAOImpl implements TransactionDAO {
 
     @Override
     public List<Transaction> findAll() throws SQLException {
-        String sql = "SELECT * FROM transactions ORDER BY date DESC";
+        String sql = "SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC";
         List<Transaction> transactions = new ArrayList<>();
 
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, currentUserId);
+            ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
                 transactions.add(createTransactionFromResultSet(rs));
@@ -133,11 +154,12 @@ public class TransactionDAOImpl implements TransactionDAO {
 
     @Override
     public List<Transaction> findByType(String type) throws SQLException {
-        String sql = "SELECT * FROM transactions WHERE transaction_type = ? ORDER BY date DESC";
+        String sql = "SELECT * FROM transactions WHERE transaction_type = ? AND user_id = ? ORDER BY date DESC";
         List<Transaction> transactions = new ArrayList<>();
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, type);
+            pstmt.setString(2, currentUserId);
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
@@ -149,11 +171,12 @@ public class TransactionDAOImpl implements TransactionDAO {
 
     @Override
     public List<Transaction> findByDate(LocalDate date) throws SQLException {
-        String sql = "SELECT * FROM transactions WHERE date = ?";
+        String sql = "SELECT * FROM transactions WHERE date = ? AND user_id = ?";
         List<Transaction> transactions = new ArrayList<>();
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, date.toString());
+            pstmt.setString(2, currentUserId);
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
@@ -165,11 +188,12 @@ public class TransactionDAOImpl implements TransactionDAO {
 
     @Override
     public List<Transaction> findByMonth(YearMonth month) throws SQLException {
-        String sql = "SELECT * FROM transactions WHERE date LIKE ? ORDER BY date DESC";
+        String sql = "SELECT * FROM transactions WHERE date LIKE ? AND user_id = ? ORDER BY date DESC";
         List<Transaction> transactions = new ArrayList<>();
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, month.toString() + "%");
+            pstmt.setString(2, currentUserId);
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
@@ -181,9 +205,10 @@ public class TransactionDAOImpl implements TransactionDAO {
 
     @Override
     public void deleteAll() throws SQLException {
-        String sql = "DELETE FROM transactions";
-        try (Statement stmt = connection.createStatement()) {
-            stmt.executeUpdate(sql);
+        String sql = "DELETE FROM transactions WHERE user_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, currentUserId);
+            pstmt.executeUpdate();
         }
     }
 
@@ -196,17 +221,19 @@ public class TransactionDAOImpl implements TransactionDAO {
         double amount = rs.getDouble("amount");
         String description = rs.getString("description");
         LocalDate date = LocalDate.parse(rs.getString("date"));
-        String category = rs.getString("category"); // Now reads String directly
+        String category = rs.getString("category");
+        boolean isIncome = type.equals("PEMASUKAN");
+        Category parsedCategory = Category.fromString(category, isIncome);
 
         Transaction transaction;
 
         if (type.equals("PEMASUKAN")) {
             String source = rs.getString("source");
-            transaction = new Income(amount, description, date, category, source);
+            transaction = new Income(amount, description, date, parsedCategory, source);
         } else {
             String paymentMethod = rs.getString("payment_method");
             boolean isRecurring = rs.getInt("is_recurring") == 1;
-            transaction = new Expense(amount, description, date, category, paymentMethod, isRecurring);
+            transaction = new Expense(amount, description, date, parsedCategory, paymentMethod, isRecurring);
         }
 
         // Set the original transaction ID

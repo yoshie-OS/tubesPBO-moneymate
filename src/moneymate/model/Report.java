@@ -1,6 +1,5 @@
 package moneymate.model;
 
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -70,7 +69,8 @@ public class Report {
         getTransactionsInPeriod().stream()
             .filter(t -> t instanceof Expense)
             .forEach(t -> {
-                String cat = t.getCategory();
+                Category category = t.getCategory();
+                String cat = category != null ? category.getDisplayName() : "Tidak diketahui";
                 categoryMap.put(cat, categoryMap.getOrDefault(cat, 0.0) + t.getAmount());
             });
 
@@ -86,7 +86,8 @@ public class Report {
         getTransactionsInPeriod().stream()
             .filter(t -> t instanceof Income)
             .forEach(t -> {
-                String cat = t.getCategory();
+                Category category = t.getCategory();
+                String cat = category != null ? category.getDisplayName() : "Tidak diketahui";
                 categoryMap.put(cat, categoryMap.getOrDefault(cat, 0.0) + t.getAmount());
             });
 

@@ -11,27 +11,24 @@ public class Expense extends Transaction {
     private String paymentMethod; // metode pembayaran (Cash, Debit, Credit, E-Wallet)
     private boolean isRecurring; // apakah pengeluaran berulang (tagihan bulanan, dll)
 
-    public Expense(double amount, String description, LocalDate date, String category,
+    public Expense(double amount, String description, LocalDate date, Category category,
                    String paymentMethod, boolean isRecurring) {
         super(amount, description, date, category);
         this.paymentMethod = paymentMethod;
         this.isRecurring = isRecurring;
     }
 
-    public Expense(double amount, String description, LocalDate date, String category) {
+    public Expense(double amount, String description, LocalDate date, String categoryName,
+                   String paymentMethod, boolean isRecurring) {
+        this(amount, description, date, Category.fromString(categoryName, false), paymentMethod, isRecurring);
+    }
+
+    public Expense(double amount, String description, LocalDate date, Category category) {
         this(amount, description, date, category, "Cash", false);
     }
 
-    // Legacy constructor for compatibility with old Category enum
-    @Deprecated
-    public Expense(double amount, String description, LocalDate date, Category category,
-                   String paymentMethod, boolean isRecurring) {
-        this(amount, description, date, category.getDisplayName(), paymentMethod, isRecurring);
-    }
-
-    @Deprecated
-    public Expense(double amount, String description, LocalDate date, Category category) {
-        this(amount, description, date, category.getDisplayName(), "Cash", false);
+    public Expense(double amount, String description, LocalDate date, String categoryName) {
+        this(amount, description, date, Category.fromString(categoryName, false));
     }
     
     public String getPaymentMethod() {

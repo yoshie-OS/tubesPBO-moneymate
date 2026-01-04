@@ -67,6 +67,7 @@ public class DatabaseManager {
         String createTransactionsTable = """
             CREATE TABLE IF NOT EXISTS transactions (
                 transaction_id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
                 transaction_type TEXT NOT NULL,
                 amount REAL NOT NULL,
                 description TEXT,
@@ -74,15 +75,17 @@ public class DatabaseManager {
                 category TEXT NOT NULL,
                 source TEXT,
                 payment_method TEXT,
-                is_recurring INTEGER DEFAULT 0
+                is_recurring INTEGER DEFAULT 0,
+                FOREIGN KEY (user_id) REFERENCES users(user_id)
             )
         """;
 
         String createUsersTable = """
             CREATE TABLE IF NOT EXISTS users (
                 user_id TEXT PRIMARY KEY,
-                username TEXT NOT NULL,
+                username TEXT NOT NULL UNIQUE,
                 email TEXT NOT NULL,
+                password TEXT,
                 initial_balance REAL DEFAULT 0.0
             )
         """;

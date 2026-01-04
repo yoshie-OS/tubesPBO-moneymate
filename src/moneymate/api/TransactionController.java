@@ -26,10 +26,32 @@ import java.util.HashMap;
 public class TransactionController {
 
     private final TransactionManager transactionManager;
+    
+    // Thread-local storage for current user ID (simple session management)
+    private static final ThreadLocal<String> currentUserId = new ThreadLocal<>();
 
     // Spring Dependency Injection - shares singleton instance
     public TransactionController(TransactionManager transactionManager) {
         this.transactionManager = transactionManager;
+    }
+    
+    /**
+     * Set current user for the session
+     */
+    public void setCurrentUser(String userId) {
+        currentUserId.set(userId);
+        transactionManager.setCurrentUserId(userId);
+    }
+    
+    /**
+     * Get current user ID
+     */
+    private String getCurrentUserId() {
+        String userId = currentUserId.get();
+        if (userId == null) {
+            userId = "DEFAULT_USER"; // Fallback for backward compatibility
+        }
+        return userId;
     }
 
     /**
@@ -46,6 +68,11 @@ public class TransactionController {
     @PostMapping("/transactions")
     public ResponseEntity<?> addTransaction(@RequestBody TransactionRequest request) {
         try {
+            // Ensure user ID is set
+            if (request.getUserId() != null) {
+                setCurrentUser(request.getUserId());
+            }
+            
             Transaction transaction = createTransactionFromRequest(request);
             transactionManager.addTransaction(transaction);
 
@@ -154,13 +181,40 @@ public class TransactionController {
         String description = request.getDescription();
         LocalDate date = LocalDate.parse(request.getDate());
         boolean isIncome = request.getType().equalsIgnoreCase("income");
-        String category = request.getCategory(); // Now accepting free-text category
+        String categoryStr = request.getCategory();
+        
+        // Convert String to Category enum
+        Category category = parseCategory(categoryStr, isIncome);
 
         if (isIncome) {
             return new Income(amount, description, date, category, request.getSource());
         } else {
             return new Expense(amount, description, date, category,
                 request.getPaymentMethod(), request.isRecurring());
+        }
+    }
+    
+    /**
+     * Helper method to parse category string to Category enum
+     */
+    private Category parseCategory(String categoryStr, boolean isIncome) {
+        if (categoryStr == null || categoryStr.trim().isEmpty()) {
+            return isIncome ? Category.LAIN_LAIN_PEMASUKAN : Category.LAIN_LAIN_PENGELUARAN;
+        }
+        
+        // Try to find by enum name first
+        try {
+            return Category.valueOf(categoryStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            // Try to find by display name
+            Category[] categories = isIncome ? Category.getIncomeCategories() : Category.getExpenseCategories();
+            for (Category cat : categories) {
+                if (cat.getDisplayName().equalsIgnoreCase(categoryStr)) {
+                    return cat;
+                }
+            }
+            // Default fallback
+            return isIncome ? Category.LAIN_LAIN_PEMASUKAN : Category.LAIN_LAIN_PENGELUARAN;
         }
     }
 
@@ -177,6 +231,7 @@ public class TransactionController {
         private String source;
         private String paymentMethod;
         private boolean recurring;
+        private String userId;
 
         // Getters and setters
         public String getType() { return type; }
@@ -202,5 +257,8 @@ public class TransactionController {
 
         public boolean isRecurring() { return recurring; }
         public void setRecurring(boolean recurring) { this.recurring = recurring; }
+        
+        public String getUserId() { return userId; }
+        public void setUserId(String userId) { this.userId = userId; }
     }
 }
