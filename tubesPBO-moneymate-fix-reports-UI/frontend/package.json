@@ -1,0 +1,13 @@
+{
+  "name": "moneymate-frontend",
+  "version": "1.0.0",
+  "description": "MoneyMate Frontend UI",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "serve": "python3 -m http.server 3000"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

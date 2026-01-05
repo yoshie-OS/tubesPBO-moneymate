@@ -1,0 +1,11 @@
+# Folder untuk menyimpan exported reports
+
+File laporan yang di-export akan tersimpan disini.
+
+Format yang tersedia:
+- CSV (untuk Excel/Spreadsheet)
+- TXT (untuk dokumentasi text)
+
+Contoh:
+- MoneyMate_Report_2025-11-10.csv
+- MoneyMate_Report_2025-11-10.txt
