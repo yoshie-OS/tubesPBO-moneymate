@@ -525,9 +525,16 @@ body {
 .form-group label {
     margin-bottom: 4px;
     font-weight: 500;
-    color: var(--text-secondary);
+    color: #6b7280 !important;
     font-size: 14px;
 }
+
+/* Khusus label di login & register */
+.auth-modal .form-group label {
+    color: #1e293b !important; /* gelap */
+    font-weight: 600;
+}
+
 
 .form-group input,
 .form-group select {

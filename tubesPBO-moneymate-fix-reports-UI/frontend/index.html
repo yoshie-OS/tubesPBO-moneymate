@@ -308,20 +308,29 @@
                 </div>
             </div>
 
+            <!-- Reports Page -->
             <div id="reportsPage" class="page">
                 <div class="page-header">
-                    <h2>Monthly Reports</h2>
+                    <h2>Laporan Bulanan</h2>
                     <div class="page-actions">
                         <input type="month" id="reportMonth" class="month-input">
-                        <button id="generateReportBtn" class="btn btn-primary">📊 Generate Report</button>
+                        <button id="generateReportBtn" class="btn btn-primary">
+                            📊 Generate Laporan
+                        </button>
+                        <button id="exportCsvBtn" class="btn btn-success" style="display: none;">
+                            📄 Export CSV
+                        </button>
+                        <button id="exportTxtBtn" class="btn btn-info" style="display: none;">
+                            📝 Export TXT
+                        </button>
                     </div>
                 </div>
-                <div class="card">
+        <div class="card">
                     <div id="reportContent" class="report-content">
                         <div class="empty-state-large">
                             <span class="empty-icon">📈</span>
-                            <h3>No Report Generated</h3>
-                            <p>Select a month and click "Generate Report"</p>
+                            <h3>Belum Ada Laporan</h3>
+                            <p>Pilih bulan dan klik "Generate Laporan" untuk melihat ringkasan keuangan</p>
                         </div>
                     </div>
                 </div>
@@ -360,6 +369,66 @@
         </main>
     </div>
 
+    <!-- Edit Transaction Modal -->
+    <div id="editModal" class="edit-modal">
+        <div class="edit-modal-content">
+            <h3>Edit Transaksi</h3>
+            <form id="editTransactionForm">
+                <input type="hidden" id="editTransactionId">
+                
+                <div class="form-group">
+                    <label for="editType">Tipe Transaksi</label>
+                    <select id="editType" name="type" required>
+                        <option value="income">Pemasukan</option>
+                        <option value="expense">Pengeluaran</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editAmount">Jumlah (Rp)</label>
+                    <input type="number" id="editAmount" name="amount" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editDescription">Deskripsi</label>
+                    <input type="text" id="editDescription" name="description" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editDate">Tanggal</label>
+                    <input type="date" id="editDate" name="date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editCategory">Kategori</label>
+                    <select id="editCategory" name="category" required>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label id="editExtraLabel">Source</label>
+                    <input type="text" id="editExtra" name="extra" required>
+                </div>
+                
+                <div class="form-group" id="editRecurringDiv">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="editRecurring" name="recurring">
+                        <span>Ini adalah pengeluaran berulang</span>
+                    </label>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        💾 Simpan Perubahan
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="app.closeEditModal()">
+                        ❌ Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <div id="toast" class="toast"></div>
 
     <script type="module" src="dist/app.js"></script>
