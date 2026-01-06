@@ -55,7 +55,13 @@ public class TransactionDAOImpl implements TransactionDAO {
             pstmt.setDouble(4, transaction.getAmount());
             pstmt.setString(5, transaction.getDescription());
             pstmt.setString(6, transaction.getDate().toString());
-            pstmt.setString(7, transaction.getCategory() != null ? transaction.getCategory().getDisplayName() : null);
+            
+            // Save category - use display name
+            String categoryStr = transaction.getCategory() != null ? transaction.getCategory().getDisplayName() : null;
+            pstmt.setString(7, categoryStr);
+            
+            // Log what we're saving
+            System.out.println("  Category being saved: " + (categoryStr != null ? categoryStr : "NULL"));
 
             // Polymorphism: Handle Income vs Expense specific fields
             if (transaction instanceof Income) {
@@ -223,7 +229,12 @@ public class TransactionDAOImpl implements TransactionDAO {
         LocalDate date = LocalDate.parse(rs.getString("date"));
         String category = rs.getString("category");
         boolean isIncome = type.equals("PEMASUKAN");
+        
+        // Parse category from database
         Category parsedCategory = Category.fromString(category, isIncome);
+        
+        // Log what we retrieved
+        System.out.println("  Category from DB: " + (category != null ? category : "NULL") + " → Parsed as: " + parsedCategory.getDisplayName());
 
         Transaction transaction;
 

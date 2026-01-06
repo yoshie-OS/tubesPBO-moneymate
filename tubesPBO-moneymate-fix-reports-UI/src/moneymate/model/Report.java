@@ -15,10 +15,18 @@ public class Report {
     
     private List<Transaction> transactions;
     private YearMonth reportPeriod; // periode laporan (bulan & tahun)
+    private double initialBalance; // saldo awal (untuk perhitungan saldo akurat)
     
     public Report(List<Transaction> transactions, YearMonth reportPeriod) {
         this.transactions = new ArrayList<>(transactions);
         this.reportPeriod = reportPeriod;
+        this.initialBalance = 0.0; // Default untuk backward compatibility
+    }
+    
+    public Report(List<Transaction> transactions, YearMonth reportPeriod, double initialBalance) {
+        this.transactions = new ArrayList<>(transactions);
+        this.reportPeriod = reportPeriod;
+        this.initialBalance = initialBalance;
     }
     
     /**
@@ -55,9 +63,10 @@ public class Report {
     
     /**
      * Hitung saldo dalam periode
+     * Saldo = Initial Balance + Total Income - Total Expense
      */
     public double getBalance() {
-        return getTotalIncome() - getTotalExpense();
+        return initialBalance + getTotalIncome() - getTotalExpense();
     }
     
     /**
@@ -106,10 +115,11 @@ public class Report {
         sb.append("========================================\n");
         sb.append("Periode: ").append(reportPeriod.format(formatter)).append("\n");
         sb.append("----------------------------------------\n");
+        sb.append(String.format("Saldo Awal       : Rp %,15.2f\n", initialBalance));
         sb.append(String.format("Total Pemasukan  : Rp %,15.2f\n", getTotalIncome()));
         sb.append(String.format("Total Pengeluaran: Rp %,15.2f\n", getTotalExpense()));
         sb.append("----------------------------------------\n");
-        sb.append(String.format("SALDO            : Rp %,15.2f\n", getBalance()));
+        sb.append(String.format("SALDO AKHIR      : Rp %,15.2f\n", getBalance()));
         sb.append("========================================\n");
         
         // Breakdown per kategori pengeluaran
@@ -145,5 +155,13 @@ public class Report {
     
     public void setReportPeriod(YearMonth reportPeriod) {
         this.reportPeriod = reportPeriod;
+    }
+    
+    public double getInitialBalance() {
+        return initialBalance;
+    }
+    
+    public void setInitialBalance(double initialBalance) {
+        this.initialBalance = initialBalance;
     }
 }

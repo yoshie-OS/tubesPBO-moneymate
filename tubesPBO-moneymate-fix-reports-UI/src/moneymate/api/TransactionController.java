@@ -131,6 +131,7 @@ public class TransactionController {
 
             Map<String, Object> response = new HashMap<>();
             response.put("month", month);
+            response.put("initialBalance", report.getInitialBalance());
             response.put("totalIncome", report.getTotalIncome());
             response.put("totalExpense", report.getTotalExpense());
             response.put("balance", report.getBalance());
@@ -185,6 +186,12 @@ public class TransactionController {
         
         // Convert String to Category enum
         Category category = parseCategory(categoryStr, isIncome);
+        
+        // Log category processing
+        System.out.println("Creating transaction from request:");
+        System.out.println("  Type: " + request.getType());
+        System.out.println("  Category from request: " + (categoryStr != null ? categoryStr : "NULL"));
+        System.out.println("  Parsed to: " + category.getDisplayName());
 
         if (isIncome) {
             return new Income(amount, description, date, category, request.getSource());

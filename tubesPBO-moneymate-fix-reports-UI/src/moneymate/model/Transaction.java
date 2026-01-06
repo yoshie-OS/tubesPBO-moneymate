@@ -2,6 +2,7 @@ package moneymate.model;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 /**
  * Abstract class Transaction - parent class untuk Income dan Expense
@@ -14,8 +15,6 @@ public abstract class Transaction {
     protected LocalDate date;
     protected Category category;
 
-    protected static int transactionCounter = 0;
-
     public Transaction(double amount, String description, LocalDate date, Category category) {
         this.transactionId = generateTransactionId();
         this.amount = amount;
@@ -25,11 +24,11 @@ public abstract class Transaction {
     }
     
     /**
-     * Generate unique transaction ID
+     * Generate unique transaction ID using UUID
+     * This ensures uniqueness even after application restarts
      */
     private String generateTransactionId() {
-        transactionCounter++;
-        return String.format("TRX%05d", transactionCounter);
+        return "TRX-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
     
     // Getters

@@ -224,6 +224,9 @@ class MoneyMateUI {
 
             console.log("✓ Normalized categories:", this.categories);
             this.populateCategorySelect();
+            // Initialize transaction forms with correct categories
+            this.updateTransactionForm();
+            this.updateTransactionForm2();
         } catch (error) {
             console.error('Failed to load categories:', error);
         }
@@ -242,8 +245,9 @@ class MoneyMateUI {
                 select.innerHTML = '';
                 this.categories!.income.forEach(cat => {
                     const option = document.createElement('option');
-                    option.value = cat.name || cat.displayName;
-                    option.textContent = cat.displayName || cat.name;
+                    // Use displayName as value so backend can match it
+                    option.value = cat.displayName;
+                    option.textContent = cat.displayName;
                     select.appendChild(option);
                 });
             }
@@ -447,9 +451,9 @@ class MoneyMateUI {
         const categories = isIncome ? this.categories.income : this.categories.expense;
         categories.forEach(cat => {
             const option = document.createElement('option');
-            // Use enum name (e.g., GAJI) as value, displayName as text
-            option.value = cat.name || cat.displayName;
-            option.textContent = cat.displayName || cat.name;
+            // Use displayName as value so backend can match it
+            option.value = cat.displayName;
+            option.textContent = cat.displayName;
             categorySelect.appendChild(option);
         });
 
@@ -794,8 +798,9 @@ class MoneyMateUI {
         const categories = isIncome ? this.categories.income : this.categories.expense;
         categories.forEach(cat => {
             const option = document.createElement('option');
-            option.value = cat.name || cat.displayName;
-            option.textContent = cat.displayName || cat.name;
+            // Use displayName as value so backend can match it
+            option.value = cat.displayName;
+            option.textContent = cat.displayName;
             categorySelect.appendChild(option);
         });
 
@@ -993,6 +998,10 @@ class MoneyMateUI {
                     <!-- Summary Cards -->
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">
                         <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md);">
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Saldo Awal</div>
+                            <div style="font-size: 28px; font-weight: 700; color: #6366f1;">Rp ${this.formatNumber(report.initialBalance)}</div>
+                        </div>
+                        <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md);">
                             <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Total Pemasukan</div>
                             <div style="font-size: 28px; font-weight: 700; color: #10b981;">Rp ${this.formatNumber(report.totalIncome)}</div>
                         </div>
@@ -1001,7 +1010,7 @@ class MoneyMateUI {
                             <div style="font-size: 28px; font-weight: 700; color: #ef4444;">Rp ${this.formatNumber(report.totalExpense)}</div>
                         </div>
                         <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md);">
-                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Saldo</div>
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">Saldo Akhir</div>
                             <div style="font-size: 28px; font-weight: 700; color: var(--primary-color);">Rp ${this.formatNumber(report.balance)}</div>
                         </div>
                     </div>

@@ -26,6 +26,8 @@ public class DatabaseManager {
             // Load SQLite JDBC driver
             Class.forName("org.sqlite.JDBC");
             this.connection = DriverManager.getConnection(DB_URL);
+            // Enable autocommit for SQLite
+            this.connection.setAutoCommit(true);
             initializeDatabase();
             System.out.println("✓ Database connection established");
         } catch (ClassNotFoundException e) {

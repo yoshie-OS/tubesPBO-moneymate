@@ -1,5 +1,7 @@
 package moneymate.controller;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -7,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import moneymate.database.DatabaseManager;
 import moneymate.database.TransactionDAO;
 import moneymate.database.TransactionDAOImpl;
 import moneymate.exception.InsufficientBalanceException;
@@ -56,6 +59,7 @@ public class TransactionManager implements Calculable {
      */
     public void setCurrentUserId(String userId) {
         if (userId != null && !userId.equals(this.currentUserId)) {
+            System.out.println("✓ Switching user: " + this.currentUserId + " → " + userId);
             this.currentUserId = userId;
             // Update DAO with current user
             if (transactionDAO instanceof TransactionDAOImpl) {
@@ -255,7 +259,7 @@ public class TransactionManager implements Calculable {
      * Generate laporan bulanan
      */
     public Report generateMonthlyReport(YearMonth month) {
-        return new Report(transactions, month);
+        return new Report(transactions, month, initialBalance);
     }
     
     /**

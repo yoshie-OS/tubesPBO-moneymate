@@ -93,9 +93,14 @@ public class UserController {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     String storedPassword = rs.getString("password");
+                    String inputPassword = request.getPassword();
+                    
+                    System.out.println("Login attempt for user: " + request.getUsername());
+                    System.out.println("  Stored password: " + (storedPassword != null ? "EXISTS" : "NULL"));
+                    System.out.println("  Input password: " + (inputPassword != null ? "EXISTS" : "NULL"));
                     
                     // Simple password check (in production, use proper hashing!)
-                    if (storedPassword != null && storedPassword.equals(request.getPassword())) {
+                    if (storedPassword != null && storedPassword.equals(inputPassword)) {
                         String userId = rs.getString("user_id");
                         double initialBalance = rs.getDouble("initial_balance");
                         
@@ -111,7 +116,11 @@ public class UserController {
                         
                         System.out.println("✓ User logged in: " + request.getUsername() + " (ID: " + userId + ")");
                         return ResponseEntity.ok(response);
+                    } else {
+                        System.out.println("✗ Password mismatch for user: " + request.getUsername());
                     }
+                } else {
+                    System.out.println("✗ User not found: " + request.getUsername());
                 }
             }
             
@@ -172,7 +181,14 @@ public class UserController {
             pstmt.setDouble(5, request.getInitialBalance());
 
             pstmt.executeUpdate();
+            
+            // Ensure commit for autocommit-enabled connections
+            if (!conn.getAutoCommit()) {
+                conn.commit();
+            }
+            
             System.out.println("✓ User saved to database: " + request.getUsername() + " (ID: " + userId + ")");
+            System.out.println("  Password saved: " + (request.getPassword() != null && !request.getPassword().isEmpty() ? "YES" : "NO"));
             return true;
 
         } catch (SQLException e) {
