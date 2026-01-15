@@ -11,12 +11,14 @@ Install dependencies berikut:
 1. **Java 17+** - [Download JDK](https://www.oracle.com/java/technologies/downloads/)
 2. **Maven** - [Download Maven](https://maven.apache.org/download.cgi)
 3. **Node.js + npm** - [Download Node.js](https://nodejs.org/)
+4. **Python 3** (for the lightweight static server on port 3000)
 
 Verify installation:
 ```bash
 java -version    # Should show version 17+
 mvn -version     # Should show Maven version
 node -version    # Should show Node version
+python --version # Should show Python 3.x
 ```
 
 ### **Linux (Fedora/RHEL):**
@@ -35,14 +37,15 @@ sudo apt install openjdk-17-jdk maven nodejs npm
 
 ### **Windows:**
 1. Double-click `START.bat`
-2. Wait for build to complete
-3. Buka browser: http://localhost:3000
+2. Script will: install/build frontend, build backend, start Python static server on http://localhost:3000, then start Spring Boot backend on http://localhost:8080
+3. Buka browser: http://localhost:3000 (frontend) — API tersedia di http://localhost:8080/api
 
 ### **Linux/Mac:**
 ```bash
 ./START.sh
 ```
-4. Buka browser: http://localhost:3000
+3. Script akan menjalankan python3 -m http.server 3000 (frontend) lalu backend Spring Boot di 8080.
+4. Buka browser: http://localhost:3000 (frontend) — API: http://localhost:8080/api
 
 > **First run will take 1-2 minutes** (downloading dependencies)
 

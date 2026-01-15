@@ -10,13 +10,21 @@ public class Income extends Transaction {
     
     private String source; // sumber pemasukan
 
-    public Income(double amount, String description, LocalDate date, String category, String source) {
+    public Income(double amount, String description, LocalDate date, Category category, String source) {
         super(amount, description, date, category);
         this.source = source;
     }
 
-    public Income(double amount, String description, LocalDate date, String category) {
+    public Income(double amount, String description, LocalDate date, String categoryName, String source) {
+        this(amount, description, date, Category.fromString(categoryName, true), source);
+    }
+
+    public Income(double amount, String description, LocalDate date, Category category) {
         this(amount, description, date, category, "Tidak disebutkan");
+    }
+
+    public Income(double amount, String description, LocalDate date, String categoryName) {
+        this(amount, description, date, Category.fromString(categoryName, true));
     }
     
     public String getSource() {

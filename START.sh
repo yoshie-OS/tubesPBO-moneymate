@@ -25,25 +25,26 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Step 3: Start Frontend Server
+# Step 3: Start Frontend (static server) and Backend
 echo
-echo "[3/4] Starting Frontend Server on port 3000..."
-cd frontend
-python3 -m http.server 3000 > /dev/null 2>&1 &
-FRONTEND_PID=$!
-cd ..
-echo "Frontend server started (PID: $FRONTEND_PID)"
+echo "[3/3] Starting Frontend (http://localhost:3000)"
+pushd frontend >/dev/null
+python3 -m http.server 3000 >/tmp/moneymate-frontend.log 2>&1 &
+FRONT_PID=$!
+popd >/dev/null
 
-# Step 4: Start Spring Boot
 echo
-echo "[4/4] Starting Spring Boot Server..."
+echo "Starting Spring Boot Backend (http://localhost:8080/api)..."
 echo
 echo "╔════════════════════════════════════════╗"
 echo "║            READY TO USE!               ║"
 echo "╠════════════════════════════════════════╣"
-echo "║  Backend:  http://localhost:8080/api   ║"
+echo "║  Backend:  http://localhost:8080/api  ║"
 echo "║  Frontend: http://localhost:3000       ║"
 echo "╚════════════════════════════════════════╝"
 echo
-echo "Starting backend server..."
+
 java -jar target/moneymate-1.0.0.jar
+
+echo "Stopping frontend server (PID: $FRONT_PID)"
+kill $FRONT_PID 2>/dev/null

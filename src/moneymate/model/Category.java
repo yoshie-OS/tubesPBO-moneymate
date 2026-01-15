@@ -48,6 +48,31 @@ public enum Category {
     public String toString() {
         return displayName;
     }
+
+    /**
+     * Parse string to Category using either enum name or display name (case-insensitive).
+     * When no match is found, it falls back to a sensible default based on preferred type.
+     */
+    public static Category fromString(String value) {
+        return fromString(value, false);
+    }
+
+    public static Category fromString(String value, boolean preferIncome) {
+        if (value == null || value.trim().isEmpty()) {
+            return preferIncome ? LAIN_LAIN_PEMASUKAN : LAIN_LAIN_PENGELUARAN;
+        }
+
+        String normalized = value.trim();
+        for (Category category : values()) {
+            if (category.name().equalsIgnoreCase(normalized) ||
+                category.getDisplayName().equalsIgnoreCase(normalized)) {
+                return category;
+            }
+        }
+
+        // Default to miscellaneous based on preferred type
+        return preferIncome ? LAIN_LAIN_PEMASUKAN : LAIN_LAIN_PENGELUARAN;
+    }
     
     /**
      * Get all income categories

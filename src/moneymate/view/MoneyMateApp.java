@@ -300,7 +300,7 @@ public class MoneyMateApp {
                 int catType = InputValidator.getValidIntInput(scanner, "Pilih: ", 1, 2);
                 Category cat = selectCategory(catType == 1 ? 
                     Category.getIncomeCategories() : Category.getExpenseCategories());
-                filtered = transactionManager.getTransactionsByCategory(cat);
+                filtered = transactionManager.getTransactionsByCategory(cat.getDisplayName());
                 break;
                 
             case 3:
